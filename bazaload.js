@@ -1,12 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicijalizacija varijabli
-    let sviArtikli = ucitajArtikle();
-    let korpa = ucitajKorpu();
-    let omiljeniArtikli = ucitajOmiljene();
+    console.log("Učitavanje stranice...");
+    
+    // Inicijalizacija varijabli - direktno koristimo artikle iz baza.js
+    let sviArtikli = artikli; // umjesto ucitajArtikle()
+    let korpa = []; // umjesto ucitajKorpu()
+    let omiljeniArtikli = []; // umjesto ucitajOmiljene()
     
     // Učitavanje podataka na odgovarajuću stranicu
-    const jeIndexStranica = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
-    const jeProizvodStranica = window.location.pathname.includes('proizvod.html');
+    const putanja = window.location.pathname;
+    console.log("Trenutna putanja:", putanja);
+    
+    const jeIndexStranica = putanja.endsWith('/') || 
+                             putanja.includes('index.html') || 
+                             putanja.endsWith('/vintage.thrift/');
+                             
+    const jeProizvodStranica = putanja.includes('proizvod.html');
+    
+    console.log("Index stranica:", jeIndexStranica);
+    console.log("Proizvod stranica:", jeProizvodStranica);
     
     if (jeIndexStranica) {
         prikaziSveArtikle(sviArtikli);
@@ -27,12 +38,19 @@ document.addEventListener('DOMContentLoaded', () => {
 // Funkcija za prikaz svih artikala na početnoj stranici
 function prikaziSveArtikle(artikli, kategorija = 'sve') {
     const kontejner = document.getElementById('products-container');
+    if (!kontejner) {
+        console.error("Container za proizvode nije pronađen!");
+        return;
+    }
+    
     kontejner.innerHTML = '';
     
     let filtriraniArtikli = artikli;
     if (kategorija !== 'sve') {
         filtriraniArtikli = artikli.filter(artikal => artikal.kategorija === kategorija);
     }
+    
+    console.log("Prikaz artikala:", filtriraniArtikli);
     
     filtriraniArtikli.forEach(artikal => {
         const artikliElement = kreirajElementArtikla(artikal);
@@ -112,26 +130,12 @@ function dodajDogadjaje() {
     });
 }
 
-// Funkcija za dodavanje/uklanjanje iz omiljenih
+// Modificirana funkcija koja ne koristi localStorage
 function toggleOmiljeni(artikalId) {
-    let sviArtikli = ucitajArtikle();
-    let omiljeniArtikli = ucitajOmiljene();
-    
     // Pronađi artikal u bazi
-    const artikal = sviArtikli.find(a => a.id === artikalId);
+    const artikal = artikli.find(a => a.id === artikalId);
     if (artikal) {
         artikal.omiljeni = !artikal.omiljeni;
-        
-        // Ažuriraj omiljene artikle
-        if (artikal.omiljeni) {
-            omiljeniArtikli.push(artikalId);
-        } else {
-            omiljeniArtikli = omiljeniArtikli.filter(id => id !== artikalId);
-        }
-        
-        // Spremi promjene
-        sacuvajArtikle(sviArtikli);
-        sacuvajOmiljene(omiljeniArtikli);
         
         // Ažuriraj brojač omiljenih
         azurirajBrojacOmiljenih();
@@ -145,9 +149,8 @@ function postaviDogadjajeZaKategorije() {
             e.preventDefault();
             
             const kategorija = this.dataset.category;
-            const sviArtikli = ucitajArtikle();
             
-            prikaziSveArtikle(sviArtikli, kategorija);
+            prikaziSveArtikle(artikli, kategorija);
             
             // Označavanje aktivne kategorije
             document.querySelectorAll('.category-link').forEach(l => l.classList.remove('active'));
@@ -166,8 +169,7 @@ function prikaziDetaljeProizvoda() {
         return;
     }
     
-    const sviArtikli = ucitajArtikle();
-    const artikal = sviArtikli.find(a => a.id === artikalId);
+    const artikal = artikli.find(a => a.id === artikalId);
     
     if (!artikal) {
         window.location.href = 'index.html';
@@ -175,6 +177,10 @@ function prikaziDetaljeProizvoda() {
     }
     
     const kontejner = document.getElementById('product-detail');
+    if (!kontejner) {
+        console.error("Container za detalje proizvoda nije pronađen!");
+        return;
+    }
     
     kontejner.innerHTML = `
         <div class="product-detail-image">
@@ -199,53 +205,48 @@ function prikaziDetaljeProizvoda() {
     });
 }
 
+// Varijable za praćenje korpe i omiljenih (umjesto localStorage)
+let aktivnaKorpa = [];
+let aktivniOmiljeni = [];
+
 // Funkcija za dodavanje artikla u korpu
 function dodajUKorpu(artikalId) {
-    let korpa = ucitajKorpu();
-    
     // Provjera je li artikal već u korpi
-    const postojeciArtikal = korpa.find(item => item.id === artikalId);
+    const postojeciArtikal = aktivnaKorpa.find(item => item.id === artikalId);
     
     if (postojeciArtikal) {
         postojeciArtikal.kolicina += 1;
     } else {
-        korpa.push({ id: artikalId, kolicina: 1 });
+        aktivnaKorpa.push({ id: artikalId, kolicina: 1 });
     }
     
-    sacuvajKorpu(korpa);
     azurirajBrojacKorpe();
 }
 
 // Funkcija za ažuriranje brojača košarice
 function azurirajBrojacKorpe() {
-    const korpa = ucitajKorpu();
-    const ukupnaKolicina = korpa.reduce((total, item) => total + item.kolicina, 0);
-    
+    const ukupnaKolicina = aktivnaKorpa.reduce((total, item) => total + item.kolicina, 0);
     document.getElementById('cart-count').textContent = ukupnaKolicina;
 }
 
 // Funkcija za ažuriranje brojača omiljenih
 function azurirajBrojacOmiljenih() {
-    const omiljeni = ucitajOmiljene();
-    document.getElementById('favorites-count').textContent = omiljeni.length;
+    const brojOmiljenih = artikli.filter(a => a.omiljeni).length;
+    document.getElementById('favorites-count').textContent = brojOmiljenih;
 }
 
-// Funkcija za prikazivanje korpe (placeholder funkcija)
+// Funkcija za prikazivanje korpe
 function prikaziKorpu() {
-    const korpa = ucitajKorpu();
-    
-    if (korpa.length === 0) {
+    if (aktivnaKorpa.length === 0) {
         alert('Vaša korpa je prazna.');
         return;
     }
     
-    const sviArtikli = ucitajArtikle();
     let poruka = 'Artikli u vašoj korpi:\n\n';
-    
     let ukupnaCijena = 0;
     
-    korpa.forEach(item => {
-        const artikal = sviArtikli.find(a => a.id === item.id);
+    aktivnaKorpa.forEach(item => {
+        const artikal = artikli.find(a => a.id === item.id);
         if (artikal) {
             const cijena = artikal.cijena * item.kolicina;
             poruka += `${artikal.naziv} (${item.kolicina}x) - ${cijena.toFixed(2)} KM\n`;
@@ -258,23 +259,19 @@ function prikaziKorpu() {
     alert(poruka);
 }
 
-// Funkcija za prikazivanje omiljenih artikala (placeholder funkcija)
+// Funkcija za prikazivanje omiljenih artikala
 function prikaziOmiljene() {
-    const omiljeni = ucitajOmiljene();
+    const omiljeniArtikli = artikli.filter(a => a.omiljeni);
     
-    if (omiljeni.length === 0) {
+    if (omiljeniArtikli.length === 0) {
         alert('Nemate omiljenih artikala.');
         return;
     }
     
-    const sviArtikli = ucitajArtikle();
     let poruka = 'Vaši omiljeni artikli:\n\n';
     
-    omiljeni.forEach(id => {
-        const artikal = sviArtikli.find(a => a.id === id);
-        if (artikal) {
-            poruka += `${artikal.naziv} - ${artikal.cijena.toFixed(2)} KM\n`;
-        }
+    omiljeniArtikli.forEach(artikal => {
+        poruka += `${artikal.naziv} - ${artikal.cijena.toFixed(2)} KM\n`;
     });
     
     alert(poruka);
