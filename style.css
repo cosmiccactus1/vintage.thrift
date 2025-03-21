@@ -1,276 +1,485 @@
-/* Globalni stilovi */
+/* Osnovni stilovi */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
 }
 
 body {
-    background-color: #f5f5f5;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    background-color: #f9f9f9;
     color: #333;
     line-height: 1.6;
 }
 
-/* Header i navigacija */
+/* Header */
 header {
-    width: 100%;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.banner {
-    background-color: #000;
-    color: #fff;
-    padding: 20px;
+.header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .logo {
+    font-family: 'Cormorant Garamond', serif;
     font-size: 24px;
-    font-weight: bold;
-    font-family: 'Times New Roman', serif;
     letter-spacing: 1px;
-}
-
-.icons {
-    display: flex;
-    gap: 20px;
-}
-
-.icon {
-    color: #fff;
-    text-decoration: none;
-    font-size: 18px;
-    position: relative;
-}
-
-.icon span {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #d4af37;
-    color: black;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-nav {
-    background-color: #222;
-    padding: 10px 0;
 }
 
 nav ul {
     display: flex;
-    justify-content: center;
     list-style: none;
 }
 
 nav ul li {
-    margin: 0 15px;
+    margin-left: 30px;
 }
 
 nav ul li a {
-    color: #fff;
     text-decoration: none;
-    padding: 5px 10px;
-    font-size: 16px;
+    color: #333;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    position: relative;
     transition: color 0.3s;
 }
 
-nav ul li a:hover {
-    color: #d4af37;
+nav ul li a:hover, nav ul li a.active {
+    color: #857e78;
+}
+
+nav ul li a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: #857e78;
+    transition: width 0.3s;
+}
+
+nav ul li a:hover::after, nav ul li a.active::after {
+    width: 100%;
+}
+
+/* Filteri */
+.filters {
+    padding: 20px;
+    background-color: #f4f4f4;
+    margin-bottom: 30px;
+}
+
+.filter-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-label {
+    font-size: 13px;
+    color: #666;
+    min-width: 110px;
+}
+
+.filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.filter-option {
+    text-decoration: none;
+    color: #333;
+    font-size: 13px;
+    transition: color 0.3s;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+}
+
+.filter-option:hover, .filter-option.active {
+    color: #857e78;
+    border-bottom-color: #857e78;
 }
 
 /* Glavni sadržaj */
 main {
     max-width: 1200px;
-    margin: 30px auto;
-    padding: 0 20px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
 }
 
-/* Kontejner za proizvode */
-.products-container {
+/* Proizvodi */
+.products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 40px;
 }
 
-/* Stilovi za karticu proizvoda */
 .product-card {
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
     position: relative;
+    overflow: hidden;
 }
 
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.product-image-container {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 15px;
 }
 
 .product-image {
     width: 100%;
-    height: 300px;
+    height: 400px;
     object-fit: cover;
+    transition: transform 0.5s;
+    display: block;
+}
+
+.product-image:hover {
+    transform: scale(1.03);
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-image-container:hover .product-overlay {
+    opacity: 1;
+}
+
+.product-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.view-button, .favorite-button {
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s;
+}
+
+.view-button:hover, .favorite-button:hover {
+    transform: translateY(-3px);
+}
+
+.view-button i, .favorite-button i {
+    color: #333;
+    font-size: 16px;
+}
+
+.favorite-button.active i {
+    color: #e25454;
 }
 
 .product-info {
-    padding: 15px;
+    text-align: center;
 }
 
 .product-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
     font-size: 18px;
     margin-bottom: 5px;
-    font-weight: bold;
 }
 
 .product-category {
-    color: #777;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    font-size: 13px;
+    color: #666;
+    letter-spacing: 0.5px;
+}
+
+/* Stranica proizvoda */
+.back-navigation {
+    margin-bottom: 40px;
+}
+
+.back-link {
+    text-decoration: none;
+    color: #666;
     font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.product-size {
-    font-size: 14px;
-    margin-bottom: 10px;
-}
-
-.product-price {
-    font-size: 18px;
-    font-weight: bold;
-    color: #000;
-}
-
-.favorite-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.8);
-    border: none;
-    border-radius: 50%;
-    width: 35px;
-    height: 35px;
-    display: flex;
-    justify-content: center;
+    display: inline-flex;
     align-items: center;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.favorite-btn:hover {
-    background: rgba(255, 255, 255, 1);
-}
-
-.favorite-btn i {
-    color: #777;
-    font-size: 18px;
+    gap: 8px;
     transition: color 0.3s;
 }
 
-.favorite-btn.active i {
-    color: #ff6b6b;
+.back-link:hover {
+    color: #333;
 }
 
-/* Stranica detalja proizvoda */
 .product-detail {
-    display: flex;
-    flex-wrap: wrap;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
 }
 
 .product-detail-image {
-    flex: 1;
-    min-width: 300px;
-}
-
-.product-detail-image img {
     width: 100%;
     height: auto;
-    max-height: 600px;
     object-fit: cover;
 }
 
 .product-detail-info {
-    flex: 1;
-    min-width: 300px;
-    padding: 30px;
+    padding: 20px 0;
 }
 
 .product-detail-title {
+    font-family: 'Cormorant Garamond', serif;
     font-size: 28px;
+    font-weight: 400;
     margin-bottom: 10px;
 }
 
-.product-detail-category {
-    color: #777;
-    font-size: 16px;
-    margin-bottom: 20px;
+.product-detail-category, .product-detail-season {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+    font-weight: 300;
 }
 
-.product-detail-size {
-    margin-bottom: 20px;
-}
-
-.product-detail-description {
-    margin-bottom: 30px;
-    line-height: 1.8;
+.product-detail-divider {
+    width: 40px;
+    height: 1px;
+    background-color: #ddd;
+    margin: 20px 0;
 }
 
 .product-detail-price {
+    font-family: 'Cormorant Garamond', serif;
     font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 30px;
+    margin: 20px 0;
 }
 
-.add-to-cart-btn {
-    background-color: #000;
-    color: #fff;
-    border: none;
-    padding: 12px 25px;
+.product-detail-size {
+    margin: 20px 0;
+    font-size: 14px;
+}
+
+.product-detail-description {
+    font-family: 'Cormorant Garamond', serif;
     font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    color: #555;
 }
 
-.add-to-cart-btn:hover {
+.product-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.add-to-cart, .add-to-favorites {
+    padding: 12px 25px;
+    border: none;
     background-color: #333;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.add-to-cart:hover {
+    background-color: #222;
+}
+
+.add-to-favorites {
+    background-color: transparent;
+    border: 1px solid #333;
+    color: #333;
+}
+
+.add-to-favorites:hover {
+    background-color: #f5f5f5;
+}
+
+.add-to-favorites.active {
+    background-color: #fce8e8;
+    border-color: #e25454;
+    color: #e25454;
+}
+
+/* Favoriti i korpa */
+.page-title {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.page-title h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 32px;
+    position: relative;
+    display: inline-block;
+}
+
+.page-title h1::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background-color: #ddd;
+    margin: 15px auto 0;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-size: 15px;
+}
+
+/* Korpa */
+.cart-items {
+    margin-bottom: 40px;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto auto;
+    gap: 20px;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-item-image {
+    width: 80px;
+    height: 100px;
+    object-fit: cover;
+}
+
+.cart-item-info h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    margin-bottom: 5px;
+}
+
+.cart-item-info p {
+    font-size: 13px;
+    color: #666;
+}
+
+.cart-item-price {
+    font-size: 16px;
+}
+
+.cart-item-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.cart-item-remove:hover {
+    color: #e25454;
+}
+
+.cart-summary {
+    padding: 30px;
+    background-color: #f8f8f8;
+    margin-top: 40px;
+    text-align: right;
+}
+
+.cart-total {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.checkout-button {
+    padding: 12px 30px;
+    background-color: #333;
+    color: white;
+    border: none;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.checkout-button:hover {
+    background-color: #222;
 }
 
 /* Footer */
 footer {
-    background-color: #000;
-    color: #fff;
-    text-align: center;
+    background-color: #f4f4f4;
     padding: 20px;
-    margin-top: 50px;
+    text-align: center;
+    font-size: 13px;
+    color: #777;
 }
 
-/* Responsivnost */
+/* Responsive */
 @media (max-width: 768px) {
-    .products-container {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 30px;
     }
     
     .product-detail {
-        flex-direction: column;
+        grid-template-columns: 1fr;
+        gap: 30px;
     }
     
-    nav ul {
-        flex-wrap: wrap;
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-inner {
+        flex-direction: column;
+        gap: 15px;
     }
     
     nav ul li {
-        margin: 5px;
+        margin-left: 15px;
     }
 }
