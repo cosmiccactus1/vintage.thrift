@@ -1,6 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Stranica učitana!");
     
+    // Hamburger meni funkcionalnost
+    const hamburgerIcon = document.getElementById('hamburgerIcon');
+    const menuDropdown = document.getElementById('menuDropdown');
+    
+    if (hamburgerIcon && menuDropdown) {
+        hamburgerIcon.addEventListener('click', function() {
+            this.classList.toggle('active');
+            menuDropdown.classList.toggle('show');
+        });
+        
+        // Zatvaranje menija klikom izvan
+        document.addEventListener('click', function(e) {
+            if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+                hamburgerIcon.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
+        });
+    }
+    
     // Provjera na kojoj smo stranici
     const naIndexStranici = window.location.pathname.includes('index.html') || 
                            window.location.pathname.endsWith('/') || 
@@ -161,6 +180,14 @@ function postaviFiltere() {
             // Označi aktivan filter
             document.querySelectorAll('[data-season]').forEach(el => el.classList.remove('active'));
             this.classList.add('active');
+            
+            // Zatvori dropdown nakon odabira
+            const hamburgerIcon = document.getElementById('hamburgerIcon');
+            const menuDropdown = document.getElementById('menuDropdown');
+            if (hamburgerIcon && menuDropdown) {
+                hamburgerIcon.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
         });
     });
     
@@ -181,6 +208,14 @@ function postaviFiltere() {
             // Označi aktivan filter
             document.querySelectorAll('[data-type]').forEach(el => el.classList.remove('active'));
             this.classList.add('active');
+            
+            // Zatvori dropdown nakon odabira
+            const hamburgerIcon = document.getElementById('hamburgerIcon');
+            const menuDropdown = document.getElementById('menuDropdown');
+            if (hamburgerIcon && menuDropdown) {
+                hamburgerIcon.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
         });
     });
 }
