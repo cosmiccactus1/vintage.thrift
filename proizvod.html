@@ -6,36 +6,33 @@
     <title>Vintage Thrift Store - Proizvod</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
-        <div class="banner">
+        <div class="header-inner">
             <div class="logo">Vintage Thrift Store</div>
-            <div class="icons">
-                <a href="#" class="icon" id="favorites-icon"><i class="fas fa-heart"></i> <span id="favorites-count">0</span></a>
-                <a href="#" class="icon" id="cart-icon"><i class="fas fa-shopping-bag"></i> <span id="cart-count">0</span></a>
-            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                </ul>
+            </nav>
         </div>
-        <nav>
-            <ul>
-                <li><a href="index.html" class="category-link" data-category="sve">Sve</a></li>
-                <li><a href="index.html" class="category-link" data-category="haljine">Haljine</a></li>
-                <li><a href="index.html" class="category-link" data-category="sakoi">Sakoi</a></li>
-                <li><a href="index.html" class="category-link" data-category="jeans">Jeans</a></li>
-                <li><a href="index.html" class="category-link" data-category="kosulje">Košulje/Bluze</a></li>
-                <li><a href="index.html" class="about-link">O nama</a></li>
-            </ul>
-        </nav>
     </header>
 
     <main>
-        <div class="product-detail" id="product-detail">
+        <div class="back-navigation">
+            <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Nazad na početnu</a>
+        </div>
+        <div id="product-detail" class="product-detail">
             <!-- Detalji proizvoda će biti dinamički učitani -->
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2025 Vintage Thrift Store. Sva prava pridržana.</p>
+        <p>Vintage Thrift Store &copy; 2025</p>
     </footer>
 
     <script src="baza.js"></script>
