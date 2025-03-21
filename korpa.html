@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store - Korpa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">Vintage Thrift Store</div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html" class="active">Korpa</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="page-title">
+            <h1>Vaša korpa</h1>
+        </div>
+        <div id="cart-container" class="cart-items">
+            <!-- Artikli u korpi će biti dinamički učitani putem JavaScript-a -->
+        </div>
+        <div class="cart-summary" id="cart-summary">
+            <!-- Ukupna cijena i gumb za nastavak kupovine -->
+        </div>
+    </main>
+
+    <footer>
+        <p>Vintage Thrift Store &copy; 2025</p>
+    </footer>
+
+    <script src="baza.js"></script>
+    <script src="bazaload.js"></script>
+</body>
+</html>
