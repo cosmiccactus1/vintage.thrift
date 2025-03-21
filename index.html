@@ -12,40 +12,44 @@
     <header>
         <div class="header-inner">
             <div class="logo">Vintage Thrift Store</div>
+            <div class="menu-container">
+                <div class="hamburger-icon" id="hamburgerIcon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="category-section">
+                        <h3>Godišnje doba</h3>
+                        <ul>
+                            <li><a href="#" class="filter-option" data-season="sve">Sve</a></li>
+                            <li><a href="#" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="#" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="#" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="#" class="filter-option" data-season="zima">Zima</a></li>
+                        </ul>
+                    </div>
+                    <div class="category-section">
+                        <h3>Kategorija</h3>
+                        <ul>
+                            <li><a href="#" class="filter-option" data-type="sve">Sve</a></li>
+                            <li><a href="#" class="filter-option" data-type="haljina">Haljine</a></li>
+                            <li><a href="#" class="filter-option" data-type="sorc">Šorc</a></li>
+                            <li><a href="#" class="filter-option" data-type="duks">Duks</a></li>
+                            <li><a href="#" class="filter-option" data-type="jakna">Jakna</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <nav>
                 <ul>
-                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="index.html" class="active">Početna</a></li>
                     <li><a href="favorites.html">Favoriti</a></li>
                     <li><a href="cart.html">Korpa</a></li>
                 </ul>
             </nav>
         </div>
     </header>
-
-    <div class="filters">
-        <div class="filter-container">
-            <div class="filter-group">
-                <span class="filter-label">Godišnje doba:</span>
-                <div class="filter-options">
-                    <a href="#" class="filter-option" data-season="sve">Sve</a>
-                    <a href="#" class="filter-option" data-season="proljece">Proljeće</a>
-                    <a href="#" class="filter-option" data-season="ljeto">Ljeto</a>
-                    <a href="#" class="filter-option" data-season="jesen">Jesen</a>
-                    <a href="#" class="filter-option" data-season="zima">Zima</a>
-                </div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-label">Kategorija:</span>
-                <div class="filter-options">
-                    <a href="#" class="filter-option" data-type="sve">Sve</a>
-                    <a href="#" class="filter-option" data-type="haljina">Haljine</a>
-                    <a href="#" class="filter-option" data-type="sorc">Šorc</a>
-                    <a href="#" class="filter-option" data-type="duks">Duks</a>
-                    <a href="#" class="filter-option" data-type="jakna">Jakna</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <main>
         <div id="products-container" class="products-grid">
