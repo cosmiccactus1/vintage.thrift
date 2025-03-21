@@ -6,36 +6,55 @@
     <title>Vintage Thrift Store</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
-        <div class="banner">
+        <div class="header-inner">
             <div class="logo">Vintage Thrift Store</div>
-            <div class="icons">
-                <a href="#" class="icon" id="favorites-icon"><i class="fas fa-heart"></i> <span id="favorites-count">0</span></a>
-                <a href="#" class="icon" id="cart-icon"><i class="fas fa-shopping-bag"></i> <span id="cart-count">0</span></a>
-            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                </ul>
+            </nav>
         </div>
-        <nav>
-            <ul>
-                <li><a href="#" class="category-link" data-category="sve">Sve</a></li>
-                <li><a href="#" class="category-link" data-category="haljine">Haljine</a></li>
-                <li><a href="#" class="category-link" data-category="sakoi">Sakoi</a></li>
-                <li><a href="#" class="category-link" data-category="jeans">Jeans</a></li>
-                <li><a href="#" class="category-link" data-category="kosulje">Košulje/Bluze</a></li>
-                <li><a href="#" class="about-link">O nama</a></li>
-            </ul>
-        </nav>
     </header>
 
+    <div class="filters">
+        <div class="filter-container">
+            <div class="filter-group">
+                <span class="filter-label">Godišnje doba:</span>
+                <div class="filter-options">
+                    <a href="#" class="filter-option" data-season="sve">Sve</a>
+                    <a href="#" class="filter-option" data-season="proljece">Proljeće</a>
+                    <a href="#" class="filter-option" data-season="ljeto">Ljeto</a>
+                    <a href="#" class="filter-option" data-season="jesen">Jesen</a>
+                    <a href="#" class="filter-option" data-season="zima">Zima</a>
+                </div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Kategorija:</span>
+                <div class="filter-options">
+                    <a href="#" class="filter-option" data-type="sve">Sve</a>
+                    <a href="#" class="filter-option" data-type="haljina">Haljine</a>
+                    <a href="#" class="filter-option" data-type="sorc">Šorc</a>
+                    <a href="#" class="filter-option" data-type="duks">Duks</a>
+                    <a href="#" class="filter-option" data-type="jakna">Jakna</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <main>
-        <div class="products-container" id="products-container">
+        <div id="products-container" class="products-grid">
             <!-- Artikli će biti dinamički učitani putem JavaScript-a -->
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2025 Vintage Thrift Store. Sva prava pridržana.</p>
+        <p>Vintage Thrift Store &copy; 2025</p>
     </footer>
 
     <script src="baza.js"></script>
