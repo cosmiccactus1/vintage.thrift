@@ -1,3 +1,4 @@
+
 // Baza artikala
 const artikli = [
     {
@@ -7,7 +8,7 @@ const artikli = [
         sezona: "ljeto",
         velicina: "S",
         cijena: 25.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Predivna ljetna haljina s cvjetnim uzorkom iz '70-ih. Lagana i prozračna, idealna za tople ljetne dane. Očuvana i u odličnom stanju bez oštećenja.",
         omiljeni: false,
         korpa: false
@@ -19,7 +20,7 @@ const artikli = [
         sezona: "ljeto",
         velicina: "M",
         cijena: 19.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Unikatni kratki šorc visokog struka. Savršen za vruće ljetne dane. Izrazito udoban i kvalitetno očuvan.",
         omiljeni: false,
         korpa: false
@@ -31,7 +32,7 @@ const artikli = [
         sezona: "jesen",
         velicina: "L",
         cijena: 29.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Topli duks s kapuljačom, idealan za jesenske dane. Mekana unutrašnjost, očuvan i bez znakova istrošenosti.",
         omiljeni: false,
         korpa: false
@@ -43,7 +44,7 @@ const artikli = [
         sezona: "zima",
         velicina: "XL",
         cijena: 45.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Topla zimska jakna retro stila iz '80-ih. Pruža odličnu zaštitu od hladnoće i vjetra. Unikatni komad koji će upotpuniti vaš zimski outfit.",
         omiljeni: false,
         korpa: false
@@ -55,7 +56,7 @@ const artikli = [
         sezona: "proljece",
         velicina: "M",
         cijena: 22.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Elegantna proljetna haljina s diskretnim uzorkom. Lagana i prozračna, savršena za prve tople dane. Kvalitetan materijal koji dugo zadržava oblik.",
         omiljeni: false,
         korpa: false
@@ -67,7 +68,7 @@ const artikli = [
         sezona: "proljece",
         velicina: "S",
         cijena: 18.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Šareni, udobni šorc za proljetne dane. Univerzalni model koji možete kombinirati s različitim majicama i bluzama.",
         omiljeni: false,
         korpa: false
@@ -79,7 +80,7 @@ const artikli = [
         sezona: "jesen",
         velicina: "M",
         cijena: 24.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Lagani duks za ranu jesen. Dovoljno topao za svježije dane, a opet prozračan da vam ne bude vruće. Odlično stanje, kao nov.",
         omiljeni: false,
         korpa: false
@@ -91,7 +92,7 @@ const artikli = [
         sezona: "proljece",
         velicina: "L",
         cijena: 32.99,
-        slika: "https://via.placeholder.com/600x800",
+        slika: "majca.jpg",
         opis: "Lagana jakna s ručno rađenim vezom na leđima. Savršena za proljetne večeri kada zahladi. Unikatni komad iz '90-ih.",
         omiljeni: false,
         korpa: false
