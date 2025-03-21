@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="banner">
+            <div class="logo">Vintage Thrift Store</div>
+            <div class="icons">
+                <a href="#" class="icon" id="favorites-icon"><i class="fas fa-heart"></i> <span id="favorites-count">0</span></a>
+                <a href="#" class="icon" id="cart-icon"><i class="fas fa-shopping-bag"></i> <span id="cart-count">0</span></a>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#" class="category-link" data-category="sve">Sve</a></li>
+                <li><a href="#" class="category-link" data-category="haljine">Haljine</a></li>
+                <li><a href="#" class="category-link" data-category="sakoi">Sakoi</a></li>
+                <li><a href="#" class="category-link" data-category="jeans">Jeans</a></li>
+                <li><a href="#" class="category-link" data-category="kosulje">Košulje/Bluze</a></li>
+                <li><a href="#" class="about-link">O nama</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="products-container" id="products-container">
+            <!-- Artikli će biti dinamički učitani putem JavaScript-a -->
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Vintage Thrift Store. Sva prava pridržana.</p>
+    </footer>
+
+    <script src="baza.js"></script>
+    <script src="bazaload.js"></script>
+</body>
+</html>
