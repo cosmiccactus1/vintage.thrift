@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Stranica učitana!");
     
+    // Učitavanje spremljenog stanja artikala
+    ucitajStanjeArtikala();
+    
     // Hamburger meni funkcionalnost
     const hamburgerIcon = document.getElementById('hamburgerIcon');
     const menuDropdown = document.getElementById('menuDropdown');
@@ -48,6 +51,55 @@ document.addEventListener('DOMContentLoaded', () => {
         prikaziKorpu();
     }
 });
+
+// Funkcija za učitavanje stanja artikala iz lokalnog skladišta
+function ucitajStanjeArtikala() {
+    try {
+        // Učitavanje statusa omiljenih
+        const spremljeniOmiljeni = localStorage.getItem('omiljeniArtikli');
+        if (spremljeniOmiljeni) {
+            const omiljeniIds = JSON.parse(spremljeniOmiljeni);
+            
+            // Ažuriranje artikala
+            artikli.forEach(artikal => {
+                artikal.omiljeni = omiljeniIds.includes(artikal.id);
+            });
+        }
+        
+        // Učitavanje statusa korpe
+        const spremljenaKorpa = localStorage.getItem('artikliUKorpi');
+        if (spremljenaKorpa) {
+            const korpaIds = JSON.parse(spremljenaKorpa);
+            
+            // Ažuriranje artikala
+            artikli.forEach(artikal => {
+                artikal.korpa = korpaIds.includes(artikal.id);
+            });
+        }
+    } catch (e) {
+        console.error("Greška prilikom učitavanja stanja artikala:", e);
+    }
+}
+
+// Funkcija za spremanje stanja omiljenih artikala
+function spremiOmiljene() {
+    try {
+        const omiljeniIds = artikli.filter(a => a.omiljeni).map(a => a.id);
+        localStorage.setItem('omiljeniArtikli', JSON.stringify(omiljeniIds));
+    } catch (e) {
+        console.error("Greška prilikom spremanja omiljenih artikala:", e);
+    }
+}
+
+// Funkcija za spremanje stanja korpe
+function spremiKorpu() {
+    try {
+        const korpaIds = artikli.filter(a => a.korpa).map(a => a.id);
+        localStorage.setItem('artikliUKorpi', JSON.stringify(korpaIds));
+    } catch (e) {
+        console.error("Greška prilikom spremanja artikala u korpi:", e);
+    }
+}
 
 // Funkcija za prikaz artikala na početnoj stranici
 function prikaziArtikleNaPocetnoj(artikliZaPrikaz) {
@@ -135,6 +187,9 @@ function toggleFavorit(artikalId, button) {
         button.classList.remove('active');
         button.querySelector('i').classList.replace('fas', 'far');
     }
+    
+    // Spremi stanje omiljenih artikala
+    spremiOmiljene();
 }
 
 // Funkcija za formatiranje naziva kategorije
@@ -284,6 +339,9 @@ function prikaziDetaljeProizvoda() {
                 this.classList.remove('active');
                 this.textContent = 'Dodaj u favorite';
             }
+            
+            // Spremi stanje omiljenih artikala
+            spremiOmiljene();
         }
     });
 }
@@ -293,6 +351,8 @@ function dodajUKorpu(artikalId) {
     const artikal = artikli.find(a => a.id === artikalId);
     if (artikal) {
         artikal.korpa = true;
+        // Spremi stanje korpe
+        spremiKorpu();
     }
 }
 
@@ -416,6 +476,8 @@ function prikaziKorpu() {
         artikli.forEach(artikal => {
             artikal.korpa = false;
         });
+        // Spremi stanje korpe
+        spremiKorpu();
         // Ponovno učitaj korpu
         prikaziKorpu();
     });
@@ -426,5 +488,7 @@ function ukloniIzKorpe(artikalId) {
     const artikal = artikli.find(a => a.id === artikalId);
     if (artikal) {
         artikal.korpa = false;
+        // Spremi stanje korpe
+        spremiKorpu();
     }
 }
