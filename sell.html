@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store - Prodaj svoju odjeću</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">Vintage Thrift Store</div>
+            <div class="menu-container">
+                <div class="hamburger-icon" id="hamburgerIcon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="category-section">
+                        <h3>Godišnje doba</h3>
+                        <ul>
+                            <li><a href="#" class="filter-option" data-season="sve">Sve</a></li>
+                            <li><a href="#" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="#" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="#" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="#" class="filter-option" data-season="zima">Zima</a></li>
+                        </ul>
+                    </div>
+                    <div class="category-section">
+                        <h3>Kategorija</h3>
+                        <ul>
+                            <li><a href="#" class="filter-option" data-type="sve">Sve</a></li>
+                            <li><a href="#" class="filter-option" data-type="musko">Muško</a></li>
+                            <li><a href="#" class="filter-option" data-type="zensko">Žensko</a></li>
+                            <li><a href="#" class="filter-option" data-type="djecije">Dječije</a></li>
+                            <li><a href="#" class="filter-option" data-type="jakne">Jakne</a></li>
+                            <li><a href="#" class="filter-option" data-type="duksevi">Duksevi</a></li>
+                            <li><a href="#" class="filter-option" data-type="majice">Majice</a></li>
+                            <li><a href="#" class="filter-option" data-type="jeans">Jeans</a></li>
+                            <li><a href="#" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
+                            <li><a href="#" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
+                            <li><a href="#" class="filter-option" data-type="handmade">Handmade</a></li>
+                            <li><a href="#" class="filter-option" data-type="starine">Starine</a></li>
+                            <li><a href="#" class="filter-option" data-type="ostalo">Ostalo</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="sell.html" class="sell-button active">Prodaj svoju odjeću</a></li>
+                    <li><a href="profile.html" class="profile-link" id="profileLink">Moj profil</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="add-listing-container">
+        <h1 class="add-listing-title">Prodaj svoju odjeću</h1>
+        
+        <form id="prodaj-form">
+            <div class="form-group">
+                <label for="listing-title">Naziv artikla</label>
+                <input type="text" id="listing-title" name="title" required placeholder="Npr. Vintage ljetna haljina">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-category">Kategorija</label>
+                <select id="listing-category" name="category" required>
+                    <option value="">Odaberite kategoriju</option>
+                    <option value="musko">Muško</option>
+                    <option value="zensko">Žensko</option>
+                    <option value="djecije">Dječije</option>
+                    <option value="jakne">Jakne</option>
+                    <option value="duksevi">Duksevi</option>
+                    <option value="majice">Majice</option>
+                    <option value="jeans">Jeans</option>
+                    <option value="sorcevi">Šorcevi</option>
+                    <option value="kosulje">Košulje i bluze</option>
+                    <option value="handmade">Handmade</option>
+                    <option value="starine">Starine</option>
+                    <option value="ostalo">Ostalo</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-season">Sezona</label>
+                <select id="listing-season" name="season" required>
+                    <option value="">Odaberite sezonu</option>
+                    <option value="proljece">Proljeće</option>
+                    <option value="ljeto">Ljeto</option>
+                    <option value="jesen">Jesen</option>
+                    <option value="zima">Zima</option>
+                    <option value="sve">Sva godišnja doba</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-size">Veličina</label>
+                <select id="listing-size" name="size" required>
+                    <option value="">Odaberite veličinu</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                    <option value="custom">Druge dimenzije</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-price">Cijena (KM)</label>
+                <input type="number" id="listing-price" name="price" min="1" step="0.01" required placeholder="Npr. 25.99">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-condition">Stanje artikla</label>
+                <select id="listing-condition" name="condition" required>
+                    <option value="">Odaberite stanje</option>
+                    <option value="novo">Novo sa etiketom</option>
+                    <option value="kao-novo">Kao novo</option>
+                    <option value="veoma-dobro">Veoma dobro</option>
+                    <option value="dobro">Dobro</option>
+                    <option value="prihvatljivo">Prihvatljivo</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-color">Boja</label>
+                <input type="text" id="listing-color" name="color" required placeholder="Npr. Plava, Crvena, Crna...">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-brand">Brend</label>
+                <input type="text" id="listing-brand" name="brand" placeholder="Npr. Levi's, Adidas, Nike...">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-description">Opis</label>
+                <textarea id="listing-description" name="description" rows="5" required placeholder="Opišite artikl, uključujući stanje, materijal, boju, i ostale važne detalje."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-location">Lokacija</label>
+                <input type="text" id="listing-location" name="location" required placeholder="Npr. Sarajevo, Centar">
+            </div>
+            
+            <div class="form-group">
+                <label>Fotografije artikla</label>
+                <div class="photo-upload-container">
+                    <div class="photo-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="photo-upload-text">
+                        Prevucite fotografije ovdje ili kliknite za odabir s računala (max 5)
+                    </div>
+                    <input type="file" id="photo-upload" name="photos" accept="image/*" multiple style="display: none;">
+                    <button type="button" class="photo-upload-btn" id="photo-upload-btn">Odaberi fotografije</button>
+                </div>
+                <div class="uploaded-photos" id="uploaded-photos">
+                    <!-- Ovdje će se dinamički prikazati učitane fotografije -->
+                </div>
+            </div>
+            
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="terms-agreement" name="terms" required>
+                <label for="terms-agreement">Prihvatam <a href="#" class="terms-link">uslove korištenja</a> i potvrđujem da su sve informacije tačne</label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="save-draft-btn" class="secondary-button">Sačuvaj kao nacrt</button>
+                <button type="submit" class="auth-button">Objavi oglas</button>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <p>Vintage Thrift Store &copy; 2025</p>
+    </footer>
+
+    <script src="js/sell.js"></script>
+</body>
+</html>
