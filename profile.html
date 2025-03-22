@@ -1,1 +1,38 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store - Moj profil</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">Vintage Thrift Store</div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="profile.html" class="active">Moj profil</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
+    <main class="profile-container">
+        <div class="profile-header">
+            <img src="https://via.placeholder.com/100" alt="Korisnički avatar" class="profile-avatar" id="profileAvatar">
+            <div class="profile-info">
+                <h1 class="profile-username" id="profileUsername">Korisničko ime</h1>
+                <div class="profile-stats">
+                    <span id="profileItemCount">0 artikala</span>
+                    <span>Član od <span id="profileMemberSince">Siječanj 2025</span></span>
+                </div>
+                <div class="profile-actions">
+                    <a href="prodaj.html" class="add-listing-btn">Dodaj novi artikal</a>
+                    <button class="logout-btn" id="logoutBtn">Odjavi se</button>
+                </div>
