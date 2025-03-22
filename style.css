@@ -219,7 +219,7 @@ main {
     gap: 15px;
 }
 
-.view-button, .favorite-button {
+.view-button, .favorite-button, .delete-button {
     background: white;
     border: none;
     width: 40px;
@@ -232,17 +232,29 @@ main {
     transition: transform 0.3s, background 0.3s;
 }
 
-.view-button:hover, .favorite-button:hover {
+.view-button:hover, .favorite-button:hover, .delete-button:hover {
     transform: translateY(-3px);
 }
 
-.view-button i, .favorite-button i {
+.view-button i, .favorite-button i, .delete-button i {
     color: #333;
     font-size: 16px;
 }
 
 .favorite-button.active i {
     color: #e25454;
+}
+
+.delete-button {
+    background-color: rgba(255, 76, 76, 0.8);
+}
+
+.delete-button i {
+    color: white;
+}
+
+.delete-button:hover {
+    background-color: rgba(255, 76, 76, 1);
 }
 
 .product-info {
@@ -262,6 +274,11 @@ main {
     font-size: 13px;
     color: #666;
     letter-spacing: 0.5px;
+}
+
+.product-price {
+    font-weight: 400;
+    margin-top: 5px;
 }
 
 /* Stranica proizvoda */
@@ -340,44 +357,6 @@ main {
     color: #555;
 }
 
-.product-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 30px;
-}
-
-.add-to-cart, .add-to-favorites {
-    padding: 12px 25px;
-    border: none;
-    background-color: #333;
-    color: white;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 13px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.add-to-cart:hover {
-    background-color: #222;
-}
-
-.add-to-favorites {
-    background-color: transparent;
-    border: 1px solid #333;
-    color: #333;
-}
-
-.add-to-favorites:hover {
-    background-color: #f5f5f5;
-}
-
-.add-to-favorites.active {
-    background-color: #fce8e8;
-    border-color: #e25454;
-    color: #e25454;
-}
-
 /* Favoriti i korpa */
 .page-title {
     margin-bottom: 40px;
@@ -406,6 +385,9 @@ main {
     padding: 40px 20px;
     color: #888;
     font-size: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Korpa */
@@ -494,6 +476,352 @@ footer {
     color: #777;
 }
 
+/* Stilovi za auth (login/register) */
+.auth-container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.auth-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 15px 0;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.3s, border-bottom 0.3s;
+}
+
+.auth-tab.active {
+    color: #333;
+    border-bottom: 2px solid #333;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.auth-form h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #777;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #aaa;
+    outline: none;
+}
+
+.form-group.checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.form-group.checkbox input {
+    margin-right: 10px;
+}
+
+.form-group.checkbox label {
+    margin-bottom: 0;
+    font-size: 13px;
+}
+
+.auth-button {
+    width: 100%;
+    padding: 14px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.auth-button:hover {
+    background-color: #222;
+}
+
+/* Stilovi za profil */
+.profile-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    background-color: white;
+    padding: 25px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 30px;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-username {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 30px;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.profile-actions {
+    margin-top: 15px;
+}
+
+.add-listing-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    margin-right: 10px;
+}
+
+.add-listing-btn:hover {
+    background-color: #222;
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    color: #666;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.profile-tabs {
+    display: flex;
+    margin-bottom: 30px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.profile-tab {
+    flex: 1;
+    padding: 15px 0;
+    text-align: center;
+    background: none;
+    border: none;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    color: #777;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.profile-tab.active {
+    background-color: #f8f8f8;
+    color: #333;
+    font-weight: 500;
+}
+
+.profile-section {
+    display: none;
+}
+
+.profile-section.active {
+    display: block;
+}
+
+/* Stilovi za prodaju */
+.add-listing-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.add-listing-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.photo-upload-container {
+    border: 2px dashed #ddd;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.photo-upload-container:hover {
+    border-color: #aaa;
+}
+
+.photo-upload-icon {
+    font-size: 40px;
+    color: #ddd;
+    margin-bottom: 15px;
+}
+
+.photo-upload-text {
+    color: #777;
+    margin-bottom: 15px;
+}
+
+.photo-upload-btn {
+    padding: 10px 20px;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 4px;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.photo-upload-btn:hover {
+    background-color: #e1e1e1;
+}
+
+.uploaded-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.uploaded-photo {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.uploaded-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.remove-photo {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 25px;
+    height: 25px;
+    background-color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
+.remove-photo i {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Special styles for sell button */
+.sell-button {
+    background-color: #333;
+    color: white !important;
+    padding: 8px 15px !important;
+    border-radius: 4px;
+    transition: background-color 0.3s !important;
+}
+
+.sell-button:hover {
+    background-color: #222 !important;
+    color: white !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .products-grid {
@@ -512,5 +840,19 @@ footer {
     
     nav ul li {
         margin-left: 15px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+    
+    .profile-stats {
+        justify-content: center;
     }
 }
