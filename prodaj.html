@@ -1,1 +1,265 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store - Prodaj svoju odjeću</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">Vintage Thrift Store</div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="profile.html">Moj profil</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
+    <main class="add-listing-container">
+        <h1 class="add-listing-title">Prodaj svoju odjeću</h1>
+        
+        <form id="prodaj-form">
+            <div class="form-group">
+                <label for="listing-title">Naziv artikla</label>
+                <input type="text" id="listing-title" name="title" required placeholder="Npr. Vintage ljetna haljina">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-category">Kategorija</label>
+                <select id="listing-category" name="category" required>
+                    <option value="">Odaberite kategoriju</option>
+                    <option value="haljina">Haljina</option>
+                    <option value="sorc">Šorc</option>
+                    <option value="duks">Duks</option>
+                    <option value="jakna">Jakna</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-season">Sezona</label>
+                <select id="listing-season" name="season" required>
+                    <option value="">Odaberite sezonu</option>
+                    <option value="proljece">Proljeće</option>
+                    <option value="ljeto">Ljeto</option>
+                    <option value="jesen">Jesen</option>
+                    <option value="zima">Zima</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-size">Veličina</label>
+                <select id="listing-size" name="size" required>
+                    <option value="">Odaberite veličinu</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-price">Cijena (KM)</label>
+                <input type="number" id="listing-price" name="price" min="1" step="0.01" required placeholder="Npr. 25.99">
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-description">Opis</label>
+                <textarea id="listing-description" name="description" rows="5" required placeholder="Opišite artikl, uključujući stanje, materijal, boju, i ostale važne detalje."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Fotografija artikla</label>
+                <div class="photo-upload-container">
+                    <div class="photo-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="photo-upload-text">
+                        Prevucite fotografiju ovdje ili kliknite za odabir s računala
+                    </div>
+                    <input type="file" id="photo-upload" name="photos" accept="image/*" style="display: none;">
+                    <button type="button" class="photo-upload-btn" id="photo-upload-btn">Odaberi fotografiju</button>
+                </div>
+                <div class="uploaded-photos" id="uploaded-photos">
+                    <!-- Ovdje će se dinamički prikazati učitana fotografija -->
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="auth-button">Objavi oglas</button>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <p>Vintage Thrift Store &copy; 2025</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Provjera je li korisnik prijavljen
+            const prijavljeniKorisnikJSON = localStorage.getItem('prijavljeniKorisnik');
+            const prijavljeniKorisnik = prijavljeniKorisnikJSON ? JSON.parse(prijavljeniKorisnikJSON) : null;
+            
+            if (!prijavljeniKorisnik) {
+                // Ako korisnik nije prijavljen, preusmjeri na register.html
+                alert('Morate se registrirati ili prijaviti prije nego što možete prodavati.');
+                window.location.href = 'register.html';
+                return;
+            }
+            
+            // Funkcionalnost za upload fotografija
+            const photoUploadBtn = document.getElementById('photo-upload-btn');
+            const photoUploadInput = document.getElementById('photo-upload');
+            const uploadedPhotosContainer = document.getElementById('uploaded-photos');
+            let uploadedPhoto = null;
+            
+            photoUploadBtn.addEventListener('click', function() {
+                photoUploadInput.click();
+            });
+            
+            photoUploadInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    
+                    // Provjera je li datoteka slika
+                    if (!file.type.startsWith('image/')) {
+                        alert('Možete uploadati samo slike.');
+                        return;
+                    }
+                    
+                    // Čitanje datoteke
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Spremanje podataka slike
+                        uploadedPhoto = e.target.result;
+                        
+                        // Prikaz slike
+                        uploadedPhotosContainer.innerHTML = '';
+                        const photoContainer = document.createElement('div');
+                        photoContainer.classList.add('uploaded-photo');
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Uploaded photo';
+                        
+                        const removeBtn = document.createElement('div');
+                        removeBtn.classList.add('remove-photo');
+                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        removeBtn.addEventListener('click', function() {
+                            // Uklanjanje fotografije
+                            uploadedPhoto = null;
+                            photoContainer.remove();
+                        });
+                        
+                        photoContainer.appendChild(img);
+                        photoContainer.appendChild(removeBtn);
+                        uploadedPhotosContainer.appendChild(photoContainer);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Događaj za submit forme
+            const prodajForm = document.getElementById('prodaj-form');
+            prodajForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Dohvaćanje vrijednosti iz forme
+                const title = document.getElementById('listing-title').value;
+                const category = document.getElementById('listing-category').value;
+                const season = document.getElementById('listing-season').value;
+                const size = document.getElementById('listing-size').value;
+                const price = document.getElementById('listing-price').value;
+                const description = document.getElementById('listing-description').value;
+                
+                // Provjera jesu li sva polja popunjena
+                if (!title || !category || !season || !size || !price || !description) {
+                    alert('Molimo popunite sva polja.');
+                    return;
+                }
+                
+                // Kreiranje novog oglasa
+                const noviOglas = {
+                    id: Date.now(),
+                    naziv: title,
+                    kategorija: category,
+                    sezona: season,
+                    velicina: size,
+                    cijena: parseFloat(price),
+                    opis: description,
+                    slika: uploadedPhoto || 'majca.jpg', // Koristi uploadanu sliku ili default
+                    datumObjave: new Date().toISOString(),
+                    prodavacId: prijavljeniKorisnik.id,
+                    prodavacUsername: prijavljeniKorisnik.username,
+                    omiljeni: false,
+                    korpa: false
+                };
+                
+                // Dodavanje oglasa u localStorage
+                const oglasiJSON = localStorage.getItem('oglasi');
+                const oglasi = oglasiJSON ? JSON.parse(oglasiJSON) : [];
+                oglasi.push(noviOglas);
+                localStorage.setItem('oglasi', JSON.stringify(oglasi));
+                
+                // Dodavanje oglasa u artikle za prikaz na početnoj stranici
+                const artikliJSON = localStorage.getItem('artikli');
+                const artikli = artikliJSON ? JSON.parse(artikliJSON) : window.artikli || [];
+                
+                const noviArtikal = {
+                    id: noviOglas.id,
+                    naziv: noviOglas.naziv,
+                    kategorija: noviOglas.kategorija,
+                    sezona: noviOglas.sezona,
+                    velicina: noviOglas.velicina,
+                    cijena: noviOglas.cijena,
+                    slika: noviOglas.slika,
+                    opis: noviOglas.opis,
+                    omiljeni: false,
+                    korpa: false
+                };
+                
+                artikli.push(noviArtikal);
+                
+                // Ako imamo globalnu varijablu artikli, ažuriramo je
+                if (window.artikli) {
+                    window.artikli.push(noviArtikal);
+                }
+                
+                // Spremamo artikle ako još nisu u globalnoj varijabli
+                if (!window.artikli) {
+                    localStorage.setItem('artikli', JSON.stringify(artikli));
+                }
+                
+                // Dodavanje oglasa u korisnikove oglase
+                const korisniciJSON = localStorage.getItem('korisnici');
+                const korisnici = korisniciJSON ? JSON.parse(korisniciJSON) : [];
+                const korisnik = korisnici.find(k => k.id === prijavljeniKorisnik.id);
+                
+                if (korisnik) {
+                    if (!korisnik.oglasi) {
+                        korisnik.oglasi = [];
+                    }
+                    
+                    korisnik.oglasi.push(noviOglas.id);
+                    localStorage.setItem('korisnici', JSON.stringify(korisnici));
+                }
+                
+                // Preusmjeravanje na početnu stranicu
+                alert('Oglas je uspješno objavljen!');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
