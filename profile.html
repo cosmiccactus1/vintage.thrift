@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vintage Thrift Store - Moj profil</title>
+    <title>Vintage Thrift Store - Profil</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
@@ -12,12 +12,50 @@
     <header>
         <div class="header-inner">
             <div class="logo">Vintage Thrift Store</div>
+            <div class="menu-container">
+                <div class="hamburger-icon" id="hamburgerIcon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="category-section">
+                        <h3>Godišnje doba</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-season="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="zima">Zima</a></li>
+                        </ul>
+                    </div>
+                    <div class="category-section">
+                        <h3>Kategorija</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-type="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="musko">Muško</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="zensko">Žensko</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="djecije">Dječije</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jakne">Jakne</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="duksevi">Duksevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="majice">Majice</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jeans">Jeans</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="handmade">Handmade</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="starine">Starine</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="ostalo">Ostalo</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <nav>
                 <ul>
                     <li><a href="index.html">Početna</a></li>
                     <li><a href="favorites.html">Favoriti</a></li>
                     <li><a href="cart.html">Korpa</a></li>
-                    <li><a href="profile.html" class="active">Moj profil</a></li>
+                    <li><a href="sell.html" class="sell-button">Prodaj svoju odjeću</a></li>
+                    <li><a href="profile.html" class="profile-link active">Moj profil</a></li>
                 </ul>
             </nav>
         </div>
@@ -30,10 +68,10 @@
                 <h1 class="profile-username" id="profileUsername">Korisničko ime</h1>
                 <div class="profile-stats">
                     <span id="profileItemCount">0 artikala</span>
-                    <span>Član od <span id="profileMemberSince">Siječanj 2025</span></span>
+                    <span>Član od <span id="profileMemberSince">Januar 2025</span></span>
                 </div>
                 <div class="profile-actions">
-                    <a href="prodaj.html" class="add-listing-btn">Dodaj novi artikal</a>
+                    <a href="sell.html" class="add-listing-btn">Dodaj novi artikal</a>
                     <button class="logout-btn" id="logoutBtn">Odjavi se</button>
                 </div>
             </div>
@@ -42,6 +80,7 @@
         <div class="profile-tabs">
             <button class="profile-tab active" data-tab="listings">Moji artikli</button>
             <button class="profile-tab" data-tab="favorites">Favoriti</button>
+            <button class="profile-tab" data-tab="orders">Narudžbe</button>
         </div>
 
         <div class="profile-content">
@@ -49,7 +88,6 @@
             <div class="profile-section active" id="listings-section">
                 <div id="user-listings" class="products-grid">
                     <!-- Ovdje će se dinamički učitati artikli korisnika -->
-                    <div class="empty-message">Još nemate objavljenih artikala. Kliknite "Dodaj novi artikal" za objavu.</div>
                 </div>
             </div>
 
@@ -57,7 +95,13 @@
             <div class="profile-section" id="favorites-section">
                 <div id="user-favorites" class="products-grid">
                     <!-- Ovdje će se dinamički učitati favoriti korisnika -->
-                    <div class="empty-message">Još nemate omiljenih artikala.</div>
+                </div>
+            </div>
+            
+            <!-- Narudžbe sekcija -->
+            <div class="profile-section" id="orders-section">
+                <div id="user-orders" class="orders-list">
+                    <!-- Ovdje će se dinamički učitati narudžbe korisnika -->
                 </div>
             </div>
         </div>
@@ -67,42 +111,48 @@
         <p>Vintage Thrift Store &copy; 2025</p>
     </footer>
 
+    <script src="js/profile.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Provjera je li korisnik prijavljen
             const prijavljeniKorisnikJSON = localStorage.getItem('prijavljeniKorisnik');
-            const prijavljeniKorisnik = prijavljeniKorisnikJSON ? JSON.parse(prijavljeniKorisnikJSON) : null;
             
-            if (!prijavljeniKorisnik) {
+            if (!prijavljeniKorisnikJSON) {
                 // Ako korisnik nije prijavljen, preusmjeri na register.html
-                alert('Morate se registrirati ili prijaviti prije pristupa profilu.');
                 window.location.href = 'register.html';
                 return;
             }
             
-            // Postavi podatke o korisniku
-            document.getElementById('profileUsername').textContent = prijavljeniKorisnik.username;
+            // Hamburger menu funkcionalnost
+            const hamburgerIcon = document.getElementById('hamburgerIcon');
+            const menuDropdown = document.getElementById('menuDropdown');
             
-            // Učitaj oglase i favorite korisnika
-            ucitajKorisnikoveOglase();
-            ucitajKorisnikoveFavorite();
+            if (hamburgerIcon && menuDropdown) {
+                hamburgerIcon.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    menuDropdown.classList.toggle('show');
+                });
+                
+                // Zatvaranje menija klikom izvan
+                document.addEventListener('click', function(e) {
+                    if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+                        hamburgerIcon.classList.remove('active');
+                        menuDropdown.classList.remove('show');
+                    }
+                });
+            }
             
-            // Događaj za odjavljivanje
-            document.getElementById('logoutBtn').addEventListener('click', function() {
-                if (confirm('Jeste li sigurni da se želite odjaviti?')) {
-                    localStorage.removeItem('prijavljeniKorisnik');
-                    window.location.href = 'index.html';
-                }
-            });
+            // Funkcionalnost za tabove
+            const profileTabs = document.querySelectorAll('.profile-tab');
+            const profileSections = document.querySelectorAll('.profile-section');
             
-            // Događaji za tabove
-            document.querySelectorAll('.profile-tab').forEach(tab => {
+            profileTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const tabName = this.getAttribute('data-tab');
                     
                     // Ukloni active klasu sa svih tabova i sekcija
-                    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.profile-section').forEach(s => s.classList.remove('active'));
+                    profileTabs.forEach(t => t.classList.remove('active'));
+                    profileSections.forEach(s => s.classList.remove('active'));
                     
                     // Dodaj active klasu na odabrani tab i sekciju
                     this.classList.add('active');
@@ -110,232 +160,13 @@
                 });
             });
             
-            // Funkcija za učitavanje oglasa korisnika
-            function ucitajKorisnikoveOglase() {
-                const oglasContainer = document.getElementById('user-listings');
-                oglasContainer.innerHTML = '';
-                
-                // Dohvati oglase
-                const oglasiJSON = localStorage.getItem('oglasi');
-                const oglasi = oglasiJSON ? JSON.parse(oglasiJSON) : [];
-                
-                // Filtriraj oglase korisnika
-                const korisniciJSON = localStorage.getItem('korisnici');
-                const korisnici = korisniciJSON ? JSON.parse(korisniciJSON) : [];
-                const korisnik = korisnici.find(k => k.id === prijavljeniKorisnik.id);
-                
-                if (!korisnik || !korisnik.oglasi || korisnik.oglasi.length === 0) {
-                    oglasContainer.innerHTML = '<div class="empty-message">Još nemate objavljenih artikala. Kliknite "Dodaj novi artikal" za objavu.</div>';
-                    return;
+            // Odjava korisnika
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('Jeste li sigurni da se želite odjaviti?')) {
+                    localStorage.removeItem('prijavljeniKorisnik');
+                    window.location.href = 'index.html';
                 }
-                
-                // Ažuriraj broj artikala
-                document.getElementById('profileItemCount').textContent = `${korisnik.oglasi.length} artikala`;
-                
-                // Podesi datum registracije
-                if (korisnik.datumRegistracije) {
-                    const datum = new Date(korisnik.datumRegistracije);
-                    const mjeseci = ['Januar', 'Februar', 'Mart', 'April', 'Maj', 'Juni', 'Juli', 'August', 'Septembar', 'Oktobar', 'Novembar', 'Decembar'];
-                    document.getElementById('profileMemberSince').textContent = `${mjeseci[datum.getMonth()]} ${datum.getFullYear()}`;
-                }
-                
-                // Prikaži oglase korisnika
-                const korisniciOglasi = oglasi.filter(o => korisnik.oglasi.includes(o.id));
-                
-                korisniciOglasi.forEach(oglas => {
-                    const artikl = document.createElement('div');
-                    artikl.classList.add('product-card');
-                    artikl.innerHTML = `
-                        <div class="product-image-container">
-                            <img src="${oglas.slika}" alt="${oglas.naziv}" class="product-image">
-                            <div class="product-overlay">
-                                <div class="product-actions">
-                                    <button class="view-button" data-id="${oglas.id}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="delete-button" data-id="${oglas.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-title">${oglas.naziv}</h3>
-                            <p class="product-category">${formatirajKategoriju(oglas.kategorija)} • ${formatirajSezonu(oglas.sezona)}</p>
-                            <p class="product-price">${oglas.cijena.toFixed(2)} KM</p>
-                        </div>
-                    `;
-                    
-                    oglasContainer.appendChild(artikl);
-                });
-                
-                // Dodaj događaje za gumbe
-                document.querySelectorAll('.view-button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        window.location.href = `proizvod.html?id=${id}`;
-                    });
-                });
-                
-                document.querySelectorAll('.delete-button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = parseInt(this.getAttribute('data-id'));
-                        if (confirm('Jeste li sigurni da želite obrisati ovaj oglas?')) {
-                            obrisiOglas(id);
-                            ucitajKorisnikoveOglase();
-                        }
-                    });
-                });
-            }
-            
-            // Funkcija za učitavanje favorita korisnika
-            function ucitajKorisnikoveFavorite() {
-                const favoritiContainer = document.getElementById('user-favorites');
-                favoritiContainer.innerHTML = '';
-                
-                // Dohvati omiljene artikle
-                const omiljeniJSON = localStorage.getItem('omiljeniArtikli');
-                const omiljeniIds = omiljeniJSON ? JSON.parse(omiljeniJSON) : [];
-                
-                if (omiljeniIds.length === 0) {
-                    favoritiContainer.innerHTML = '<div class="empty-message">Još nemate omiljenih artikala.</div>';
-                    return;
-                }
-                
-                // Dohvati artikle
-                const artikliJSON = localStorage.getItem('artikli');
-                let artikli = artikliJSON ? JSON.parse(artikliJSON) : window.artikli || [];
-                
-                // Filtriraj samo omiljene artikle
-                const omiljeni = artikli.filter(a => omiljeniIds.includes(a.id));
-                
-                if (omiljeni.length === 0) {
-                    favoritiContainer.innerHTML = '<div class="empty-message">Još nemate omiljenih artikala.</div>';
-                    return;
-                }
-                
-                // Prikaži omiljene artikle
-                omiljeni.forEach(artikl => {
-                    const element = document.createElement('div');
-                    element.classList.add('product-card');
-                    element.innerHTML = `
-                        <div class="product-image-container">
-                            <img src="${artikl.slika}" alt="${artikl.naziv}" class="product-image">
-                            <div class="product-overlay">
-                                <div class="product-actions">
-                                    <button class="view-button" data-id="${artikl.id}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="favorite-button active" data-id="${artikl.id}">
-                                        <i class="fas fa-heart"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-title">${artikl.naziv}</h3>
-                            <p class="product-category">${formatirajKategoriju(artikl.kategorija)} • ${formatirajSezonu(artikl.sezona)}</p>
-                            <p class="product-price">${artikl.cijena.toFixed(2)} KM</p>
-                        </div>
-                    `;
-                    
-                    favoritiContainer.appendChild(element);
-                });
-                
-                // Dodaj događaje za gumbe
-                document.querySelectorAll('.view-button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        window.location.href = `proizvod.html?id=${id}`;
-                    });
-                });
-                
-                document.querySelectorAll('.favorite-button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = parseInt(this.getAttribute('data-id'));
-                        ukloniIzFavorita(id);
-                        ucitajKorisnikoveFavorite();
-                    });
-                });
-            }
-            
-            // Funkcija za formatiranje kategorije
-            function formatirajKategoriju(kategorija) {
-                const kategorije = {
-                    'haljina': 'Haljina',
-                    'sorc': 'Šorc',
-                    'duks': 'Duks',
-                    'jakna': 'Jakna'
-                };
-                return kategorije[kategorija] || kategorija;
-            }
-            
-            // Funkcija za formatiranje sezone
-            function formatirajSezonu(sezona) {
-                const sezone = {
-                    'proljece': 'Proljeće',
-                    'ljeto': 'Ljeto',
-                    'jesen': 'Jesen',
-                    'zima': 'Zima'
-                };
-                return sezone[sezona] || sezona;
-            }
-            
-            // Funkcija za brisanje oglasa
-            function obrisiOglas(id) {
-                // Obriši iz oglasa
-                const oglasiJSON = localStorage.getItem('oglasi');
-                let oglasi = oglasiJSON ? JSON.parse(oglasiJSON) : [];
-                oglasi = oglasi.filter(o => o.id !== id);
-                localStorage.setItem('oglasi', JSON.stringify(oglasi));
-                
-                // Obriši iz korisnikovih oglasa
-                const korisniciJSON = localStorage.getItem('korisnici');
-                const korisnici = korisniciJSON ? JSON.parse(korisniciJSON) : [];
-                const korisnik = korisnici.find(k => k.id === prijavljeniKorisnik.id);
-                
-                if (korisnik && korisnik.oglasi) {
-                    korisnik.oglasi = korisnik.oglasi.filter(oglasId => oglasId !== id);
-                    localStorage.setItem('korisnici', JSON.stringify(korisnici));
-                }
-                
-                // Obriši iz artikala
-                const artikliJSON = localStorage.getItem('artikli');
-                let artikli = artikliJSON ? JSON.parse(artikliJSON) : window.artikli || [];
-                
-                if (artikliJSON) {
-                    artikli = artikli.filter(a => a.id !== id);
-                    localStorage.setItem('artikli', JSON.stringify(artikli));
-                } else if (window.artikli) {
-                    const index = window.artikli.findIndex(a => a.id === id);
-                    if (index !== -1) {
-                        window.artikli.splice(index, 1);
-                    }
-                }
-            }
-            
-            // Funkcija za uklanjanje iz favorita
-            function ukloniIzFavorita(id) {
-                const omiljeniJSON = localStorage.getItem('omiljeniArtikli');
-                let omiljeniIds = omiljeniJSON ? JSON.parse(omiljeniJSON) : [];
-                
-                omiljeniIds = omiljeniIds.filter(artikalId => artikalId !== id);
-                localStorage.setItem('omiljeniArtikli', JSON.stringify(omiljeniIds));
-                
-                // Ažuriraj artikle
-                const artikliJSON = localStorage.getItem('artikli');
-                let artikli = artikliJSON ? JSON.parse(artikliJSON) : window.artikli || [];
-                
-                if (artikliJSON) {
-                    artikli.forEach(a => {
-                        if (a.id === id) a.omiljeni = false;
-                    });
-                    localStorage.setItem('artikli', JSON.stringify(artikli));
-                } else if (window.artikli) {
-                    const artikal = window.artikli.find(a => a.id === id);
-                    if (artikal) artikal.omiljeni = false;
-                }
-            }
+            });
         });
     </script>
 </body>
