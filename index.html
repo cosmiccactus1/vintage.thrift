@@ -46,6 +46,8 @@
                     <li><a href="index.html" class="active">Početna</a></li>
                     <li><a href="favorites.html">Favoriti</a></li>
                     <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="register.html" class="sell-button" id="sellButton">Prodaj svoju odjeću</a></li>
+                    <li><a href="profile.html" class="profile-link" id="profileLink" style="display: none;">Moj profil</a></li>
                 </ul>
             </nav>
         </div>
@@ -63,5 +65,27 @@
 
     <script src="baza.js"></script>
     <script src="bazaload.js"></script>
+    <script>
+        // Provjera je li korisnik prijavljen
+        document.addEventListener('DOMContentLoaded', function() {
+            const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+            const sellButton = document.getElementById('sellButton');
+            const profileLink = document.getElementById('profileLink');
+            
+            if (prijavljeniKorisnik) {
+                // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na prodaj.html
+                sellButton.href = 'prodaj.html';
+                
+                // Prikaži link za profil
+                profileLink.style.display = 'block';
+            } else {
+                // Ako korisnik nije prijavljen, link "Prodaj svoju odjeću" vodi na register.html
+                sellButton.href = 'register.html';
+                
+                // Sakrij link za profil
+                profileLink.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
