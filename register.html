@@ -12,11 +12,49 @@
     <header>
         <div class="header-inner">
             <div class="logo">Vintage Thrift Store</div>
+            <div class="menu-container">
+                <div class="hamburger-icon" id="hamburgerIcon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="category-section">
+                        <h3>Godišnje doba</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-season="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="zima">Zima</a></li>
+                        </ul>
+                    </div>
+                    <div class="category-section">
+                        <h3>Kategorija</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-type="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="musko">Muško</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="zensko">Žensko</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="djecije">Dječije</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jakne">Jakne</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="duksevi">Duksevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="majice">Majice</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jeans">Jeans</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="handmade">Handmade</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="starine">Starine</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="ostalo">Ostalo</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <nav>
                 <ul>
                     <li><a href="index.html">Početna</a></li>
                     <li><a href="favorites.html">Favoriti</a></li>
                     <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="register.html" class="sell-button active">Registracija</a></li>
                 </ul>
             </nav>
         </div>
@@ -32,7 +70,7 @@
             <!-- Login forma -->
             <div class="auth-form" id="login-form">
                 <h2>Prijava na račun</h2>
-                <form id="login" action="#" method="post">
+                <form id="login-form-element">
                     <div class="form-group">
                         <label for="login-email">Email</label>
                         <input type="email" id="login-email" name="email" required placeholder="Unesite vašu email adresu">
@@ -51,7 +89,7 @@
             <div class="auth-form active" id="register-form">
                 <h2>Registracija za prodaju</h2>
                 <p class="auth-subtitle">Registrirajte se i počnite prodavati svoju odjeću</p>
-                <form id="register" action="#" method="post">
+                <form id="register-form-element">
                     <div class="form-group">
                         <label for="register-username">Korisničko ime</label>
                         <input type="text" id="register-username" name="username" required placeholder="Odaberite korisničko ime">
@@ -84,138 +122,45 @@
         <p>Vintage Thrift Store &copy; 2025</p>
     </footer>
 
+    <script src="js/auth.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Varijable za forme
-            const loginForm = document.getElementById('login');
-            const registerForm = document.getElementById('register');
+            // Hamburger menu funkcionalnost
+            const hamburgerIcon = document.getElementById('hamburgerIcon');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            if (hamburgerIcon && menuDropdown) {
+                hamburgerIcon.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    menuDropdown.classList.toggle('show');
+                });
+                
+                // Zatvaranje menija klikom izvan
+                document.addEventListener('click', function(e) {
+                    if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+                        hamburgerIcon.classList.remove('active');
+                        menuDropdown.classList.remove('show');
+                    }
+                });
+            }
+            
+            // Funkcionalnost za tabove
             const authTabs = document.querySelectorAll('.auth-tab');
             const authForms = document.querySelectorAll('.auth-form');
             
-            // Prebacivanje između login i register formi
             authTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const tabName = this.getAttribute('data-tab');
                     
-                    // Uklonite active klasu sa svih tabova i formi
+                    // Ukloni active klasu sa svih tabova i formi
                     authTabs.forEach(t => t.classList.remove('active'));
                     authForms.forEach(f => f.classList.remove('active'));
                     
-                    // Dodajte active klasu na odabrani tab i formu
+                    // Dodaj active klasu na odabrani tab i formu
                     this.classList.add('active');
                     document.getElementById(`${tabName}-form`).classList.add('active');
                 });
             });
-            
-            // Upravljanje login formom
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const email = document.getElementById('login-email').value;
-                    const password = document.getElementById('login-password').value;
-                    
-                    // Provjera jesu li polja popunjena
-                    if (!email || !password) {
-                        alert('Molimo popunite sva polja.');
-                        return;
-                    }
-                    
-                    // Dohvaćanje korisnika iz localStorage-a
-                    const korisniciJSON = localStorage.getItem('korisnici');
-                    const korisnici = korisniciJSON ? JSON.parse(korisniciJSON) : [];
-                    
-                    // Provjera postoji li korisnik
-                    const korisnik = korisnici.find(k => k.email === email && k.password === password);
-                    if (korisnik) {
-                        // Spremanje podataka o prijavljenom korisniku
-                        localStorage.setItem('prijavljeniKorisnik', JSON.stringify({
-                            id: korisnik.id,
-                            username: korisnik.username,
-                            email: korisnik.email
-                        }));
-                        
-                        // Preusmjeravanje na početnu stranicu
-                        window.location.href = 'index.html';
-                    } else {
-                        alert('Netočna email adresa ili lozinka.');
-                    }
-                });
-            }
-            
-            // Upravljanje registracijskom formom
-            if (registerForm) {
-                registerForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const username = document.getElementById('register-username').value;
-                    const email = document.getElementById('register-email').value;
-                    const password = document.getElementById('register-password').value;
-                    const confirmPassword = document.getElementById('register-confirm-password').value;
-                    const terms = document.getElementById('terms').checked;
-                    
-                    // Provjera jesu li sva polja popunjena
-                    if (!username || !email || !password || !confirmPassword) {
-                        alert('Molimo popunite sva polja.');
-                        return;
-                    }
-                    
-                    // Provjera podudaraju li se lozinke
-                    if (password !== confirmPassword) {
-                        alert('Lozinke se ne podudaraju.');
-                        return;
-                    }
-                    
-                    // Provjera je li lozinka dovoljno jaka
-                    if (password.length < 8) {
-                        alert('Lozinka mora imati najmanje 8 znakova.');
-                        return;
-                    }
-                    
-                    // Provjera jesu li prihvaćeni uvjeti korištenja
-                    if (!terms) {
-                        alert('Morate prihvatiti uvjete korištenja.');
-                        return;
-                    }
-                    
-                    // Dohvaćanje korisnika iz localStorage-a
-                    const korisniciJSON = localStorage.getItem('korisnici');
-                    const korisnici = korisniciJSON ? JSON.parse(korisniciJSON) : [];
-                    
-                    // Provjera postoji li već korisnik s istim emailom
-                    if (korisnici.some(korisnik => korisnik.email === email)) {
-                        alert('Korisnik s ovom email adresom već postoji.');
-                        return;
-                    }
-                    
-                    // Kreiranje novog korisnika
-                    const noviKorisnik = {
-                        id: Date.now(), // Jednostavan način generiranja jedinstvenog ID-a
-                        username,
-                        email,
-                        password,
-                        datumRegistracije: new Date().toISOString(),
-                        oglasi: [],
-                        favoriti: [],
-                        korpa: []
-                    };
-                    
-                    // Dodavanje novog korisnika u array i spremanje u localStorage
-                    korisnici.push(noviKorisnik);
-                    localStorage.setItem('korisnici', JSON.stringify(korisnici));
-                    
-                    // Spremanje podataka o prijavljenom korisniku
-                    localStorage.setItem('prijavljeniKorisnik', JSON.stringify({
-                        id: noviKorisnik.id,
-                        username: noviKorisnik.username,
-                        email: noviKorisnik.email
-                    }));
-                    
-                    // Preusmjeravanje na prodaj.html
-                    alert('Registracija uspješna! Sada možete prodavati svoju odjeću.');
-                    window.location.href = 'prodaj.html';
-                });
-            }
         });
     </script>
 </body>
