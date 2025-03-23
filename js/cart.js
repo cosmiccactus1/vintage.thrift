@@ -6,11 +6,37 @@
 // Globalne varijable
 let cartItems = [];
 
+// Helper funkcija za dohvaćanje auth tokena
+function getAuthToken() {
+    const user = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
+    return user.token || '';
+}
+
+// Helper funkcija za pripremu headers-a sa autorizacijom
+function getAuthHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+    };
+}
+
 // Dohvatanje artikala iz korpe s API-ja
 async function fetchCartItems() {
     try {
-        const response = await fetch('/api/cart');
+        const response = await fetch('/api/cart', {
+            headers: getAuthHeaders()
+        });
+        
         if (!response.ok) {
+            // Ako je 401 Unauthorized, preusmjeri na login
+            if (response.status === 401) {
+                showMessage('Sesija je istekla. Molimo prijavite se ponovo.', 'error');
+                localStorage.setItem('redirectAfterLogin', 'cart.html');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return [];
+            }
             throw new Error('Greška prilikom dohvatanja artikala iz korpe');
         }
         
@@ -18,6 +44,7 @@ async function fetchCartItems() {
         return data;
     } catch (error) {
         console.error('Greška:', error);
+        showMessage('Došlo je do greške prilikom dohvatanja artikala iz korpe', 'error');
         return [];
     }
 }
@@ -169,12 +196,19 @@ async function removeFromCart() {
         // API poziv za uklanjanje artikla iz korpe
         const response = await fetch(`/api/cart/${id}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: getAuthHeaders()
         });
         
         if (!response.ok) {
+            // Provjera autorizacije
+            if (response.status === 401) {
+                showMessage('Sesija je istekla. Molimo prijavite se ponovo.', 'error');
+                localStorage.setItem('redirectAfterLogin', 'cart.html');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
             throw new Error('Greška prilikom uklanjanja artikla iz korpe');
         }
         
@@ -201,24 +235,30 @@ async function moveToFavorites() {
         // API poziv za dodavanje artikla u favorite
         const addFavoriteResponse = await fetch(`/api/favorites/${id}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: getAuthHeaders()
         });
         
         if (!addFavoriteResponse.ok) {
+            // Provjera autorizacije
+            if (addFavoriteResponse.status === 401) {
+                showMessage('Sesija je istekla. Molimo prijavite se ponovo.', 'error');
+                localStorage.setItem('redirectAfterLogin', 'cart.html');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
             throw new Error('Greška prilikom dodavanja artikla u favorite');
         }
         
         // API poziv za uklanjanje artikla iz korpe
         const removeCartResponse = await fetch(`/api/cart/${id}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: getAuthHeaders()
         });
         
         if (!removeCartResponse.ok) {
+            // Već smo provjerili autorizaciju iznad
             throw new Error('Greška prilikom uklanjanja artikla iz korpe');
         }
         
@@ -289,8 +329,25 @@ function showMessage(message, type = 'info') {
     }, 3000);
 }
 
+// Funkcija za provjeru autentifikacije
+function checkAuthentication() {
+    const token = getAuthToken();
+    if (!token) {
+        showMessage('Morate se prijaviti da biste pristupili korpi', 'info');
+        localStorage.setItem('redirectAfterLogin', 'cart.html');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2000);
+        return false;
+    }
+    return true;
+}
+
 // Inicijalizacija stranice
 document.addEventListener('DOMContentLoaded', async function() {
+    // Provjera autentifikacije
+    if (!checkAuthentication()) return;
+    
     // Dohvatanje artikala u korpi
     cartItems = await fetchCartItems();
     
