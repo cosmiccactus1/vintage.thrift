@@ -1,18 +1,10 @@
-// Vercel serverless funkcija za autentikaciju
-const { MongoClient, ObjectId } = require('mongodb');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+// Vercel serverless funkcija za autentikaciju putem Supabase
+const { createClient } = require('@supabase/supabase-js');
 
-// Konfiguracija MongoDB konekcije
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB_NAME || 'vintage_thrift_store';
-
-// Helper funkcija za konekciju na MongoDB
-async function connectToDatabase() {
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-  await client.connect();
-  return client.db(dbName);
-}
+// Konfiguracija Supabase klijenta
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper funkcija za parsiranje JSON body-a
 async function parseBody(req) {
@@ -37,9 +29,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const db = await connectToDatabase();
-    const usersCollection = db.collection('users');
-
     // POST /api/auth/register - Registracija korisnika
     if (req.method === 'POST' && req.url === '/api/auth/register') {
       const body = await parseBody(req);
@@ -50,16 +39,17 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Provjera postojanja korisnika
-      const existingUser = await usersCollection.findOne({
-        $or: [
-          { username: body.username },
-          { email: body.email }
-        ]
-      });
+      // Provjera postojanja korisnika u users tablici
+      const { data: existingUsers, error: queryError } = await supabase
+        .from('users')
+        .select('*')
+        .or(`username.eq.${body.username},email.eq.${body.email}`)
+        .limit(1);
       
-      if (existingUser) {
-        if (existingUser.username === body.username) {
+      if (queryError) throw queryError;
+      
+      if (existingUsers && existingUsers.length > 0) {
+        if (existingUsers[0].username === body.username) {
           res.status(400).json({ message: 'Korisničko ime je već zauzeto' });
         } else {
           res.status(400).json({ message: 'Email adresa je već u upotrebi' });
@@ -67,38 +57,44 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Hashiranje šifre
-      const hashedPassword = await bcrypt.hash(body.password, 10);
+      // Kreiranje korisnika putem Auth API-ja
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: body.email,
+        password: body.password,
+        email_confirm: true // Automatski potvrdi email
+      });
       
-      // Kreiranje korisnika
+      if (authError) throw authError;
+      
+      // Kreiranje korisnika u users tablici
       const newUser = {
+        id: authData.user.id,
         username: body.username,
         email: body.email,
-        password: hashedPassword,
-        avatar: body.avatar || null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        avatar_url: body.avatar_url || null
       };
       
-      const result = await usersCollection.insertOne(newUser);
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([newUser]);
       
-      // Kreiranje JWT tokena
-      const token = jwt.sign(
-        { userId: result.insertedId.toString() },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      if (insertError) throw insertError;
       
-      // Vraćanje korisnika bez šifre
-      const { password, ...userWithoutPassword } = newUser;
+      // Kreiranje JWT tokena za prijavu
+      const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
+        user_id: authData.user.id
+      });
       
+      if (sessionError) throw sessionError;
+      
+      // Transformacija za frontend
       res.status(201).json({
         message: 'Registracija uspješna',
         user: {
-          ...userWithoutPassword,
-          id: result.insertedId.toString()
+          ...newUser,
+          _id: newUser.id // Za kompatibilnost
         },
-        token
+        token: sessionData.session.access_token
       });
       return;
     }
@@ -113,39 +109,34 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Provjera postojanja korisnika
-      const user = await usersCollection.findOne({ email: body.email });
+      // Prijava putem Auth API-ja
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: body.email,
+        password: body.password
+      });
       
-      if (!user) {
+      if (authError) {
         res.status(401).json({ message: 'Neispravni podaci za prijavu' });
         return;
       }
       
-      // Provjera šifre
-      const isPasswordValid = await bcrypt.compare(body.password, user.password);
+      // Dohvatanje podataka o korisniku iz users tablice
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
       
-      if (!isPasswordValid) {
-        res.status(401).json({ message: 'Neispravni podaci za prijavu' });
-        return;
-      }
+      if (userError) throw userError;
       
-      // Kreiranje JWT tokena
-      const token = jwt.sign(
-        { userId: user._id.toString() },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-      
-      // Vraćanje korisnika bez šifre
-      const { password, ...userWithoutPassword } = user;
-      
+      // Transformacija za frontend
       res.status(200).json({
         message: 'Prijava uspješna',
         user: {
-          ...userWithoutPassword,
-          id: user._id.toString()
+          ...userData,
+          _id: userData.id // Za kompatibilnost
         },
-        token
+        token: authData.session.access_token
       });
       return;
     }
@@ -155,31 +146,20 @@ module.exports = async (req, res) => {
       const authHeader = req.headers.authorization;
       
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ message: 'Nije autorizovano' });
+        res.status(401).json({ message: 'Nije autorizovano', valid: false });
         return;
       }
       
       const token = authHeader.split(' ')[1];
       
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Provjera postojanja korisnika
-        const user = await usersCollection.findOne({
-          _id: new ObjectId(decoded.userId)
-        });
-        
-        if (!user) {
-          res.status(401).json({ message: 'Korisnik ne postoji' });
-          return;
-        }
-        
-        // Token je validan
-        res.status(200).json({ valid: true });
-      } catch (error) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
         res.status(401).json({ message: 'Neispravan token', valid: false });
+        return;
       }
       
+      res.status(200).json({ valid: true });
       return;
     }
     
@@ -193,54 +173,42 @@ module.exports = async (req, res) => {
       }
       
       const token = authHeader.split(' ')[1];
+      const body = await parseBody(req);
       
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const body = await parseBody(req);
-        
-        // Validacija inputa
-        if (!body.currentPassword || !body.newPassword) {
-          res.status(400).json({ message: 'Sva polja su obavezna' });
-          return;
-        }
-        
-        // Provjera postojanja korisnika
-        const user = await usersCollection.findOne({
-          _id: new ObjectId(decoded.userId)
-        });
-        
-        if (!user) {
-          res.status(401).json({ message: 'Korisnik ne postoji' });
-          return;
-        }
-        
-        // Provjera trenutne šifre
-        const isPasswordValid = await bcrypt.compare(body.currentPassword, user.password);
-        
-        if (!isPasswordValid) {
-          res.status(401).json({ message: 'Trenutna šifra nije ispravna' });
-          return;
-        }
-        
-        // Hashiranje nove šifre
-        const hashedPassword = await bcrypt.hash(body.newPassword, 10);
-        
-        // Ažuriranje šifre
-        await usersCollection.updateOne(
-          { _id: new ObjectId(decoded.userId) },
-          {
-            $set: {
-              password: hashedPassword,
-              updatedAt: new Date()
-            }
-          }
-        );
-        
-        res.status(200).json({ message: 'Šifra je uspješno promijenjena' });
-      } catch (error) {
-        res.status(401).json({ message: 'Neispravan token' });
+      // Validacija inputa
+      if (!body.currentPassword || !body.newPassword) {
+        res.status(400).json({ message: 'Sva polja su obavezna' });
+        return;
       }
       
+      // Dohvatanje korisnika
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        res.status(401).json({ message: 'Neispravan token' });
+        return;
+      }
+      
+      // Prvo provjeriti trenutnu šifru
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: body.currentPassword
+      });
+      
+      if (signInError) {
+        res.status(401).json({ message: 'Trenutna šifra nije ispravna' });
+        return;
+      }
+      
+      // Promjena šifre
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        user.id,
+        { password: body.newPassword }
+      );
+      
+      if (updateError) throw updateError;
+      
+      res.status(200).json({ message: 'Šifra je uspješno promijenjena' });
       return;
     }
     
@@ -254,35 +222,12 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Provjera postojanja korisnika
-      const user = await usersCollection.findOne({ email: body.email });
+      // Slanje emaila za resetiranje šifre
+      await supabase.auth.resetPasswordForEmail(body.email, {
+        redirectTo: `${process.env.FRONTEND_URL}/reset-password`
+      });
       
-      if (!user) {
-        // Iz sigurnosnih razloga, ne otkrivamo da li korisnik postoji
-        res.status(200).json({ message: 'Ako korisnik postoji, link za resetiranje šifre će biti poslan na email' });
-        return;
-      }
-      
-      // Kreiranje reset tokena
-      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const resetTokenExpiry = new Date();
-      resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // Token važeći 1 sat
-      
-      // Spremanje tokena u bazu
-      await usersCollection.updateOne(
-        { _id: user._id },
-        {
-          $set: {
-            resetToken,
-            resetTokenExpiry,
-            updatedAt: new Date()
-          }
-        }
-      );
-      
-      // U pravoj implementaciji, ovdje bi poslali email s linkom za resetiranje
-      console.log(`Reset token za ${user.email}: ${resetToken}`);
-      
+      // Iz sigurnosnih razloga, ne otkrivamo da li email postoji ili ne
       res.status(200).json({ message: 'Ako korisnik postoji, link za resetiranje šifre će biti poslan na email' });
       return;
     }
@@ -297,34 +242,15 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Provjera tokena
-      const user = await usersCollection.findOne({
-        resetToken: body.token,
-        resetTokenExpiry: { $gt: new Date() }
-      });
+      // Resetiranje šifre
+      const { error } = await supabase.auth.updateUser({
+        password: body.password
+      }, { accessToken: body.token });
       
-      if (!user) {
+      if (error) {
         res.status(400).json({ message: 'Neispravan ili istekao token za resetiranje šifre' });
         return;
       }
-      
-      // Hashiranje nove šifre
-      const hashedPassword = await bcrypt.hash(body.password, 10);
-      
-      // Ažuriranje šifre i uklanjanje reset tokena
-      await usersCollection.updateOne(
-        { _id: user._id },
-        {
-          $set: {
-            password: hashedPassword,
-            updatedAt: new Date()
-          },
-          $unset: {
-            resetToken: '',
-            resetTokenExpiry: ''
-          }
-        }
-      );
       
       res.status(200).json({ message: 'Šifra je uspješno resetirana' });
       return;
@@ -332,8 +258,14 @@ module.exports = async (req, res) => {
     
     // POST /api/auth/logout - Odjava korisnika
     if (req.method === 'POST' && req.url === '/api/auth/logout') {
-      // U serverless implementaciji, logout je većinom klijentska akcija
-      // Ovdje možemo implementirati blacklisting tokena ako je potrebno
+      const authHeader = req.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        
+        // Poništavanje tokena
+        await supabase.auth.admin.signOut(token);
+      }
       
       res.status(200).json({ message: 'Uspješna odjava' });
       return;
