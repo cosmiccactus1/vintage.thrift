@@ -172,33 +172,150 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // Ostale rute
-    // GET /api/auth/validate-token
+    // GET /api/auth/validate-token - Validacija tokena
     if (req.method === 'GET' && req.url === '/api/auth/validate-token') {
-      // Kod za validaciju tokena...
+      console.log('Primljen zahtjev za validaciju tokena');
       const authHeader = req.headers.authorization;
+      
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ valid: false });
+        res.status(401).json({ message: 'Nije autorizovano', valid: false });
         return;
       }
+      
       const token = authHeader.split(' ')[1];
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) {
-        res.status(401).json({ valid: false });
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        console.error('Token nije validan:', userError);
+        res.status(401).json({ message: 'Neispravan token', valid: false });
         return;
       }
+      
       res.status(200).json({ valid: true });
       return;
     }
     
-    // POST /api/auth/logout
+    // POST /api/auth/change-password - Promjena šifre
+    if (req.method === 'POST' && req.url === '/api/auth/change-password') {
+      console.log('Primljen zahtjev za promjenu šifre');
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ message: 'Nije autorizovano' });
+        return;
+      }
+      
+      const token = authHeader.split(' ')[1];
+      const body = await parseBody(req);
+      
+      // Validacija inputa
+      if (!body.currentPassword || !body.newPassword) {
+        res.status(400).json({ message: 'Sva polja su obavezna' });
+        return;
+      }
+      
+      // Dohvatanje korisnika
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        res.status(401).json({ message: 'Neispravan token' });
+        return;
+      }
+      
+      // Prvo provjeriti trenutnu šifru
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: body.currentPassword
+      });
+      
+      if (signInError) {
+        res.status(401).json({ message: 'Trenutna šifra nije ispravna' });
+        return;
+      }
+      
+      // Promjena šifre
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        user.id,
+        { password: body.newPassword }
+      );
+      
+      if (updateError) throw updateError;
+      
+      res.status(200).json({ message: 'Šifra je uspješno promijenjena' });
+      return;
+    }
+    
+    // POST /api/auth/forgot-password - Zahtjev za resetiranje šifre
+    if (req.method === 'POST' && req.url === '/api/auth/forgot-password') {
+      console.log('Primljen zahtjev za resetiranje šifre');
+      const body = await parseBody(req);
+      
+      // Validacija inputa
+      if (!body.email) {
+        res.status(400).json({ message: 'Email je obavezan' });
+        return;
+      }
+      
+      // Slanje emaila za resetiranje šifre
+      await supabase.auth.resetPasswordForEmail(body.email, {
+        redirectTo: `${process.env.FRONTEND_URL}/reset-password`
+      });
+      
+      // Iz sigurnosnih razloga, ne otkrivamo da li email postoji ili ne
+      res.status(200).json({ message: 'Ako korisnik postoji, link za resetiranje šifre će biti poslan na email' });
+      return;
+    }
+    
+    // POST /api/auth/reset-password - Resetiranje šifre
+    if (req.method === 'POST' && req.url === '/api/auth/reset-password') {
+      console.log('Primljen zahtjev za finalno resetiranje šifre');
+      const body = await parseBody(req);
+      
+      // Validacija inputa
+      if (!body.token || !body.password) {
+        res.status(400).json({ message: 'Sva polja su obavezna' });
+        return;
+      }
+      
+      // Resetiranje šifre
+      const { error } = await supabase.auth.updateUser({
+        password: body.password
+      }, { accessToken: body.token });
+      
+      if (error) {
+        res.status(400).json({ message: 'Neispravan ili istekao token za resetiranje šifre' });
+        return;
+      }
+      
+      res.status(200).json({ message: 'Šifra je uspješno resetirana' });
+      return;
+    }
+    
+    // POST /api/auth/logout - Odjava korisnika
     if (req.method === 'POST' && req.url === '/api/auth/logout') {
-      // Kod za odjavu...
-      res.status(200).json({ message: 'Odjava uspješna' });
+      console.log('Primljen zahtjev za odjavu');
+      const authHeader = req.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        
+        // Poništavanje tokena
+        await supabase.auth.admin.signOut(token);
+      }
+      
+      res.status(200).json({ message: 'Uspješna odjava' });
+      return;
+    }
+    
+    // GET /api/auth/test - Testna ruta
+    if (req.method === 'GET' && req.url === '/api/auth/test') {
+      res.status(200).json({ message: 'Auth API radi' });
       return;
     }
     
     // Ako nijedna ruta ne odgovara
+    console.log('Ruta nije pronađena:', req.method, req.url);
     res.status(404).json({ message: 'Ruta nije pronađena' });
     
   } catch (error) {
