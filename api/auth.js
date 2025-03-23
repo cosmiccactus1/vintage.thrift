@@ -124,24 +124,45 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Dohvatanje podataka o korisniku iz users tablice
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-      
-      if (userError) throw userError;
-      
-      // Transformacija za frontend
-      res.status(200).json({
-        message: 'Prijava uspješna',
-        user: {
-          ...userData,
-          _id: userData.id // Za kompatibilnost
-        },
-        token: authData.session.access_token
-      });
+      try {
+        // Dohvatanje podataka o korisniku iz users tablice
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .maybeSingle(); // Koristimo maybeSingle umjesto single
+        
+        if (userError) throw userError;
+        
+        if (!userData) {
+          // Ako korisnik postoji u Auth ali ne i u users tablici
+          res.status(404).json({ message: 'Korisnički profil nije pronađen' });
+          return;
+        }
+        
+        // Transformacija za frontend
+        res.status(200).json({
+          message: 'Prijava uspješna',
+          user: {
+            ...userData,
+            _id: userData.id // Za kompatibilnost
+          },
+          token: authData.session.access_token
+        });
+      } catch (error) {
+        console.error('Greška prilikom dohvatanja korisničkih podataka:', error);
+        // Fallback - vrati samo podatke iz Auth
+        res.status(200).json({
+          message: 'Prijava uspješna',
+          user: {
+            id: authData.user.id,
+            _id: authData.user.id,
+            email: authData.user.email,
+            username: authData.user.email.split('@')[0] // Privremeno rješenje
+          },
+          token: authData.session.access_token
+        });
+      }
       return;
     }
     
