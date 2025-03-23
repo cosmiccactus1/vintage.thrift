@@ -80,13 +80,12 @@ if (req.method === 'POST' && req.url === '/api/auth/register') {
       
       if (insertError) throw insertError;
       
-      // Kreiranje JWT tokena za prijavu
-      const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-        user_id: authData.user.id
-      });
-      
-      if (sessionError) throw sessionError;
-      
+     // Kreiranje JWT tokena za prijavu
+const { data: sessionData, error: sessionError } = await supabase.auth.admin.signInWithUserId(
+  authData.user.id
+);
+
+if (sessionError) throw sessionError;
       // Transformacija za frontend
       res.status(201).json({
         message: 'Registracija uspješna',
