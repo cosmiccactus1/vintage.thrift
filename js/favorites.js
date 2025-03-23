@@ -9,7 +9,15 @@ let favoriteItems = [];
 // Dohvatanje omiljenih artikala s API-ja
 async function fetchFavoriteItems() {
     try {
-        const response = await fetch('/api/favorites');
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch('/api/favorites', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja omiljenih artikala');
         }
@@ -113,11 +121,15 @@ async function removeFromFavorites() {
     const id = this.getAttribute('data-id');
     
     try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
         // API poziv za uklanjanje artikla iz omiljenih
         const response = await fetch(`/api/favorites/${id}`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         
@@ -146,11 +158,15 @@ async function toggleCart() {
     const isInCart = this.classList.contains('active');
     
     try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
         // API poziv za dodavanje/uklanjanje artikla iz korpe
         const response = await fetch(`/api/cart/${id}`, {
             method: isInCart ? 'DELETE' : 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         
