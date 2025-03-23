@@ -1,7 +1,9 @@
 {
   "name": "vintage-thrift-store",
   "version": "1.0.0",
+  "description": "Online marketplace for vintage clothing",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "multer": "^1.4.5-lts.1"
   }
 }
