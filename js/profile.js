@@ -31,7 +31,15 @@ function checkUserLoggedIn() {
 // Učitavanje podataka korisnika
 async function loadUserData() {
     try {
-        const response = await fetch(`/api/users/${userData.id}`);
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`/api/users/${userData.id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja podataka korisnika');
         }
@@ -48,7 +56,15 @@ async function loadUserData() {
 // Učitavanje artikala korisnika
 async function loadUserListings() {
     try {
-        const response = await fetch(`/api/articles/user/${userData.id}`);
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`/api/articles/user/${userData.id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja artikala korisnika');
         }
@@ -65,7 +81,15 @@ async function loadUserListings() {
 // Učitavanje omiljenih artikala korisnika
 async function loadUserFavorites() {
     try {
-        const response = await fetch('/api/favorites');
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch('/api/favorites', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja omiljenih artikala');
         }
@@ -82,7 +106,15 @@ async function loadUserFavorites() {
 // Učitavanje narudžbi korisnika
 async function loadUserOrders() {
     try {
-        const response = await fetch('/api/orders');
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch('/api/orders', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja narudžbi korisnika');
         }
@@ -122,7 +154,7 @@ function updateProfileInfo() {
     // Ažuriranje avatara korisnika
     const profileAvatar = document.getElementById('profileAvatar');
     if (profileAvatar) {
-        profileAvatar.src = userData.avatar || 'https://via.placeholder.com/100';
+        profileAvatar.src = userData.avatar_url || 'https://via.placeholder.com/100';
     }
     
     // Ažuriranje broja artikala
@@ -133,8 +165,8 @@ function updateProfileInfo() {
     
     // Ažuriranje datuma registracije
     const profileMemberSince = document.getElementById('profileMemberSince');
-    if (profileMemberSince && userData.createdAt) {
-        const date = new Date(userData.createdAt);
+    if (profileMemberSince && userData.created_at) {
+        const date = new Date(userData.created_at);
         const month = getMonthName(date.getMonth());
         const year = date.getFullYear();
         profileMemberSince.textContent = `${month} ${year}`;
@@ -303,13 +335,13 @@ function renderUserOrders(orders) {
     
     orders.forEach(order => {
         // Formatiranje datuma
-        const orderDate = new Date(order.createdAt);
+        const orderDate = new Date(order.created_at);
         const formattedDate = `${orderDate.getDate()}.${orderDate.getMonth() + 1}.${orderDate.getFullYear()}.`;
         
         html += `
             <div class="order-item" data-id="${order._id}">
                 <div class="order-header">
-                    <div class="order-number">Narudžba #${order.orderNumber}</div>
+                    <div class="order-number">Narudžba #${order.order_number}</div>
                     <div class="order-date">${formattedDate}</div>
                     <div class="order-status ${order.status.toLowerCase()}">${getOrderStatusName(order.status)}</div>
                 </div>
@@ -331,7 +363,7 @@ function renderUserOrders(orders) {
                 </div>
                 <div class="order-total">
                     <span>Ukupno:</span>
-                    <span class="total-price">${parseFloat(order.totalPrice).toFixed(2)} KM</span>
+                    <span class="total-price">${parseFloat(order.total_price).toFixed(2)} KM</span>
                 </div>
             </div>
         `;
@@ -347,10 +379,14 @@ async function deleteArticle(id) {
     }
     
     try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
         const response = await fetch(`/api/articles/${id}`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         
@@ -382,10 +418,14 @@ async function deleteArticle(id) {
 // Funkcija za uklanjanje artikla iz favorita
 async function removeFromFavorites(id) {
     try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
         const response = await fetch(`/api/favorites/${id}`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         
@@ -414,10 +454,14 @@ async function toggleCart(id) {
     const isInCart = button.classList.contains('active');
     
     try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
         const response = await fetch(`/api/cart/${id}`, {
             method: isInCart ? 'DELETE' : 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
         
@@ -538,6 +582,7 @@ function initializeLogout() {
         logoutBtn.addEventListener('click', function() {
             if (confirm('Jeste li sigurni da se želite odjaviti?')) {
                 localStorage.removeItem('prijavljeniKorisnik');
+                localStorage.removeItem('authToken');
                 window.location.href = 'index.html';
             }
         });
