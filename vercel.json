@@ -5,10 +5,10 @@
     { "src": "style.css", "use": "@vercel/static" },
     { "src": "js/*.js", "use": "@vercel/static" },
     { "src": "images/*", "use": "@vercel/static" },
-    { "src": "api/*.js", "use": "@vercel/node" }
+    { "src": "api/**/*.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.js" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/", "dest": "/index.html" },
     { "src": "/favicon.ico", "dest": "/images/favicon.ico" },
     { "handle": "filesystem" },
