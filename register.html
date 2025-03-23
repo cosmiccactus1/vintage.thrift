@@ -161,6 +161,58 @@
                     document.getElementById(`${tabName}-form`).classList.add('active');
                 });
             });
+            
+            // Dodaj event listenere za forme
+            const loginForm = document.getElementById('login-form-element');
+            const registerForm = document.getElementById('register-form-element');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    
+                    try {
+                        const user = await loginUser(email, password);
+                        console.log('Prijava uspješna:', user);
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error('Greška prilikom prijave:', error);
+                        alert(error.message || 'Greška prilikom prijave');
+                    }
+                });
+            }
+
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('register-username').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm-password').value;
+                    
+                    if (password !== confirmPassword) {
+                        alert('Lozinke se ne podudaraju');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('Pokušaj registracije sa:', { username, email });
+                        const user = await registerUser({
+                            username,
+                            email,
+                            password
+                        });
+                        console.log('Registracija uspješna:', user);
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error('Greška prilikom registracije:', error);
+                        alert(error.message || 'Greška prilikom registracije');
+                    }
+                });
+            }
         });
     </script>
 </body>
