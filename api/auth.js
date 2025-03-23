@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
 
   try {
     // POST /api/auth/register - Registracija korisnika
- if (req.method === 'POST' && req.url === '/register') {
+if (req.method === 'POST' && req.url === '/api/auth/register') {
       const body = await parseBody(req);
       
       // Validacija inputa
