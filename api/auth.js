@@ -30,8 +30,10 @@ module.exports = async (req, res) => {
 
   try {
     // POST /api/auth/register - Registracija korisnika
-if (req.method === 'POST' && req.url === '/api/auth/register') {
+    if (req.method === 'POST' && req.url === '/api/auth/register') {
+      console.log('Primljen zahtjev za registraciju');
       const body = await parseBody(req);
+      console.log('Podaci za registraciju:', { username: body.username, email: body.email });
       
       // Validacija inputa
       if (!body.username || !body.email || !body.password) {
@@ -39,21 +41,29 @@ if (req.method === 'POST' && req.url === '/api/auth/register') {
         return;
       }
       
-      // Provjera postojanja korisnika u users tablici
-      const { data: existingUsers, error: queryError } = await supabase
+      // Provjera postojanja korisnika u users tablici - odvojeni upiti
+      const { data: existingUsersByUsername, error: queryErrorUsername } = await supabase
         .from('users')
         .select('*')
-        .or(`username.eq.${body.username},email.eq.${body.email}`)
+        .eq('username', body.username)
         .limit(1);
-      
-      if (queryError) throw queryError;
-      
-      if (existingUsers && existingUsers.length > 0) {
-        if (existingUsers[0].username === body.username) {
-          res.status(400).json({ message: 'Korisničko ime je već zauzeto' });
-        } else {
-          res.status(400).json({ message: 'Email adresa je već u upotrebi' });
-        }
+
+      const { data: existingUsersByEmail, error: queryErrorEmail } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', body.email)
+        .limit(1);
+
+      if (queryErrorUsername) throw queryErrorUsername;
+      if (queryErrorEmail) throw queryErrorEmail;
+
+      if (existingUsersByUsername && existingUsersByUsername.length > 0) {
+        res.status(400).json({ message: 'Korisničko ime je već zauzeto' });
+        return;
+      }
+
+      if (existingUsersByEmail && existingUsersByEmail.length > 0) {
+        res.status(400).json({ message: 'Email adresa je već u upotrebi' });
         return;
       }
       
@@ -66,11 +76,12 @@ if (req.method === 'POST' && req.url === '/api/auth/register') {
       
       if (authError) throw authError;
       
-      // Kreiranje korisnika u users tablici
+      // Kreiranje korisnika u users tablici - dodano password polje
       const newUser = {
         id: authData.user.id,
         username: body.username,
         email: body.email,
+        password: 'hashed', // Dodano za not-null constraint
         avatar_url: body.avatar_url || null
       };
       
@@ -80,20 +91,14 @@ if (req.method === 'POST' && req.url === '/api/auth/register') {
       
       if (insertError) throw insertError;
       
-     // Kreiranje JWT tokena za prijavu
-const { data: sessionData, error: sessionError } = await supabase.auth.admin.signInWithUserId(
-  authData.user.id
-);
-
-if (sessionError) throw sessionError;
-      // Transformacija za frontend
+      // Jednostavniji pristup bez kreiranja sesije
       res.status(201).json({
         message: 'Registracija uspješna',
         user: {
           ...newUser,
           _id: newUser.id // Za kompatibilnost
         },
-        token: sessionData.session.access_token
+        token: authData.session ? authData.session.access_token : null
       });
       return;
     }
