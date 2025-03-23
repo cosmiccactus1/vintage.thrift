@@ -8,11 +8,10 @@ let uploadedImages = [];
 
 // Provjera je li korisnik prijavljen
 function checkUserLoggedIn() {
-    console.log("Provjera je li korisnik prijavljen");
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
     
     if (!userDataString) {
-        console.log("Korisnik nije prijavljen");
+        // Ako korisnik nije prijavljen, preusmjeri na register.html
         window.location.href = 'register.html';
         return null;
     }
@@ -27,7 +26,6 @@ function checkUserLoggedIn() {
 
 // Inicijalizacija opcija za upload fotografija
 function initPhotoUpload() {
-    console.log("Inicijalizacija upload fotografija");
     const photoUploadBtn = document.getElementById('photo-upload-btn');
     const photoUploadInput = document.getElementById('photo-upload');
     const photoUploadContainer = document.querySelector('.photo-upload-container');
@@ -67,7 +65,6 @@ function initPhotoUpload() {
 
 // Obrađivanje odabira datoteka
 function handleFileSelection(e) {
-    console.log("Odabir datoteka");
     const files = e.target.files;
     const uploadedPhotosContainer = document.getElementById('uploaded-photos');
     
@@ -140,7 +137,6 @@ function handleFileSelection(e) {
 
 // Validacija forme
 function validateForm() {
-    console.log("Validacija forme");
     const form = document.getElementById('prodaj-form');
     const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
@@ -176,13 +172,9 @@ function validateForm() {
         const errorMessage = document.createElement('div');
         errorMessage.className = 'error-message';
         errorMessage.textContent = 'Potrebno je dodati bar jednu sliku';
-        const formGroup = document.querySelector('.form-group');
-        if (formGroup) {
-            formGroup.appendChild(errorMessage);
-        }
+        document.querySelector('.form-group:has(.photo-upload-container)').appendChild(errorMessage);
     }
     
-    console.log("Validacija rezultat:", isValid);
     return isValid;
 }
 
@@ -190,6 +182,9 @@ function validateForm() {
 async function saveAsDraft() {
     const userData = checkUserLoggedIn();
     if (!userData) return;
+    
+    // Dohvaćanje tokena iz localStorage-a
+    const token = localStorage.getItem('authToken');
     
     // Dohvaćanje vrijednosti forme
     const formData = new FormData(document.getElementById('prodaj-form'));
@@ -207,6 +202,9 @@ async function saveAsDraft() {
         // API poziv za spremanje nacrta
         const response = await fetch('/api/articles/draft', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
             body: formData
         });
         
@@ -230,7 +228,6 @@ async function saveAsDraft() {
 
 // Objavljivanje artikla
 async function publishArticle(e) {
-    console.log("Funkcija publishArticle pozvana");
     e.preventDefault();
     
     const userData = checkUserLoggedIn();
@@ -241,6 +238,9 @@ async function publishArticle(e) {
         showMessage('Molimo popunite sva obavezna polja.', 'error');
         return;
     }
+    
+    // Dohvaćanje tokena iz localStorage-a
+    const token = localStorage.getItem('authToken');
     
     // Dohvaćanje vrijednosti forme
     const formData = new FormData(document.getElementById('prodaj-form'));
@@ -255,10 +255,12 @@ async function publishArticle(e) {
     formData.append('userId', userData.id);
     
     try {
-        console.log("Slanje API zahtjeva");
         // API poziv za objavljivanje artikla
         const response = await fetch('/api/articles', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
             body: formData
         });
         
@@ -332,8 +334,6 @@ function initHamburgerMenu() {
 
 // Inicijalizacija stranice
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM učitan");
-    
     // Provjera je li korisnik prijavljen
     const userData = checkUserLoggedIn();
     if (!userData) return;
@@ -353,10 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener za form submit
     const form = document.getElementById('prodaj-form');
     if (form) {
-        console.log("Forma pronađena, dodajem submit listener");
         form.addEventListener('submit', publishArticle);
-    } else {
-        console.error("Forma nije pronađena!");
     }
     
     // Event listeneri za uklanjanje klase error prilikom unosa
