@@ -8,6 +8,7 @@
     { "src": "api/*.js", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/api/auth/(.*)", "dest": "/api/auth.js" },
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
     { "src": "/", "dest": "/index.html" },
     { "src": "/favicon.ico", "dest": "/images/favicon.ico" },
