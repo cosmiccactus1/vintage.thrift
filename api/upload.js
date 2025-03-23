@@ -1,18 +1,14 @@
-// Vercel serverless funkcija za upload slika
-const jwt = require('jsonwebtoken');
+// Vercel serverless funkcija za upload slika putem Supabase Storage
+const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
-const { Readable } = require('stream');
-const cloudinary = require('cloudinary').v2;
 
-// Konfiguracija Cloudinary-a za upload slika
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Konfiguracija Supabase klijenta
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper funkcija za verifikaciju JWT tokena
-function verifyToken(req) {
+async function verifyToken(req) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -20,9 +16,17 @@ function verifyToken(req) {
     }
     
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return decoded.userId;
+    
+    // Verifikacija tokena putem Supabase Auth API
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return null;
+    }
+    
+    return user.id;
   } catch (error) {
+    console.error('Greška prilikom verifikacije tokena:', error);
     return null;
   }
 }
@@ -47,22 +51,32 @@ async function parseMultipartForm(req) {
   });
 }
 
-// Helper funkcija za upload slike na Cloudinary
-async function uploadToCloudinary(file, folder = 'vintage_thrift_store') {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    const bufferStream = new Readable();
-    bufferStream.push(file.buffer);
-    bufferStream.push(null);
-    bufferStream.pipe(stream);
-  });
+// Helper funkcija za upload slike na Supabase Storage
+async function uploadToStorage(file, bucket = 'article-images') {
+  const fileName = `${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`;
+  
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype
+    });
+  
+  if (error) {
+    throw error;
+  }
+  
+  // Dohvaćanje javnog URL-a slike
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(fileName);
+  
+  return {
+    url: publicUrl,
+    path: fileName,
+    bucket: bucket,
+    contentType: file.mimetype,
+    size: file.size
+  };
 }
 
 module.exports = async (req, res) => {
@@ -85,7 +99,7 @@ module.exports = async (req, res) => {
 
   try {
     // Provjera autentikacije
-    const userId = verifyToken(req);
+    const userId = await verifyToken(req);
     if (!userId) {
       res.status(401).json({ message: 'Nije autorizovano' });
       return;
@@ -110,16 +124,16 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Učitavanje slike na Cloudinary
-      const result = await uploadToCloudinary(file);
+      // Učitavanje slike na Supabase Storage
+      const result = await uploadToStorage(file, 'article-images');
       
       res.status(200).json({
         message: 'Slika uspješno uploadovana',
-        url: result.secure_url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        format: result.format
+        url: result.url,
+        path: result.path,
+        bucket: result.bucket,
+        contentType: result.contentType,
+        size: result.size
       });
       return;
     }
@@ -142,16 +156,17 @@ module.exports = async (req, res) => {
         }
       }
       
-      // Učitavanje slika na Cloudinary
-      const uploadPromises = files.map(file => uploadToCloudinary(file));
+      // Učitavanje slika na Supabase Storage
+      const uploadPromises = files.map(file => uploadToStorage(file, 'article-images'));
       const results = await Promise.all(uploadPromises);
       
+      // Formatiranje rezultata
       const uploadedImages = results.map(result => ({
-        url: result.secure_url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        format: result.format
+        url: result.url,
+        path: result.path,
+        bucket: result.bucket,
+        contentType: result.contentType,
+        size: result.size
       }));
       
       res.status(200).json({
@@ -180,13 +195,20 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Učitavanje slike na Cloudinary u poseban folder za profilne slike
-      const result = await uploadToCloudinary(file, 'vintage_thrift_store/profiles');
+      // Učitavanje slike na Supabase Storage u poseban bucket za profilne slike
+      const result = await uploadToStorage(file, 'profile-images');
+      
+      // Ažuriranje avatar_url u tabeli users
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: result.url })
+        .eq('id', userId);
+      
+      if (updateError) throw updateError;
       
       res.status(200).json({
         message: 'Profilna slika uspješno uploadovana',
-        url: result.secure_url,
-        publicId: result.public_id
+        url: result.url
       });
       return;
     }
