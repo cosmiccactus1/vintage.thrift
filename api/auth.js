@@ -35,7 +35,6 @@ module.exports = async (req, res) => {
     if (req.method === 'POST' && req.url === '/api/auth/register') {
       console.log('Primljen zahtjev za registraciju');
       const body = await parseBody(req);
-      console.log('Podaci za registraciju:', { username: body.username, email: body.email });
       
       // Validacija inputa
       if (!body.username || !body.email || !body.password) {
@@ -43,74 +42,65 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // Provjera postojanja korisnika u users tablici - odvojeni upiti
-      const { data: existingUsersByUsername, error: queryErrorUsername } = await supabase
+      // Provjera postojanja korisnika
+      const { data: existingUsersByUsername } = await supabase
         .from('users')
         .select('*')
         .eq('username', body.username)
         .limit(1);
-
-      const { data: existingUsersByEmail, error: queryErrorEmail } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', body.email)
-        .limit(1);
-
-      if (queryErrorUsername) throw queryErrorUsername;
-      if (queryErrorEmail) throw queryErrorEmail;
 
       if (existingUsersByUsername && existingUsersByUsername.length > 0) {
         res.status(400).json({ message: 'Korisničko ime je već zauzeto' });
         return;
       }
 
+      const { data: existingUsersByEmail } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', body.email)
+        .limit(1);
+
       if (existingUsersByEmail && existingUsersByEmail.length > 0) {
         res.status(400).json({ message: 'Email adresa je već u upotrebi' });
         return;
       }
       
-      // Kreiranje korisnika putem Auth API-ja
-      console.log('Kreiranje korisnika u Auth sustavu...');
+      // Kreiranje korisnika u Auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: body.email,
         password: body.password,
-        email_confirm: true // Automatski potvrdi email
+        email_confirm: true
       });
       
       if (authError) {
-        console.error('Greška prilikom kreiranja korisnika u Auth:', authError);
+        console.error('Greška prilikom kreiranja u Auth:', authError);
         throw authError;
       }
       
-      console.log('Korisnik uspješno kreiran u Auth sustavu, ID:', authData.user.id);
-      
-      // Kreiranje korisnika u users tablici - dodano password polje
+      // Kreiranje korisnika u users tablici
       const newUser = {
         id: authData.user.id,
         username: body.username,
         email: body.email,
-        password: 'hashed', // Dodano za not-null constraint
+        password: 'hashed',
         avatar_url: body.avatar_url || null
       };
       
-      console.log('Dodavanje korisnika u users tablicu:', newUser);
       const { error: insertError } = await supabase
         .from('users')
         .insert([newUser]);
       
       if (insertError) {
-        console.error('Greška prilikom dodavanja u users tablicu:', insertError);
+        console.error('Greška prilikom dodavanja u users:', insertError);
         throw insertError;
       }
       
-      console.log('Korisnik uspješno dodan u users tablicu');
-      
-      // Jednostavniji pristup bez kreiranja sesije
+      // Odgovor
       res.status(201).json({
         message: 'Registracija uspješna',
         user: {
           ...newUser,
-          _id: newUser.id // Za kompatibilnost
+          _id: newUser.id
         },
         token: authData.session ? authData.session.access_token : null
       });
@@ -121,7 +111,6 @@ module.exports = async (req, res) => {
     if (req.method === 'POST' && req.url === '/api/auth/login') {
       console.log('Primljen zahtjev za prijavu');
       const body = await parseBody(req);
-      console.log('Podaci za prijavu:', { email: body.email });
       
       // Validacija inputa
       if (!body.email || !body.password) {
@@ -130,164 +119,90 @@ module.exports = async (req, res) => {
       }
       
       // Prijava putem Auth API-ja
-      console.log('Pokušaj Supabase autentikacije...');
-      const authResult = await supabase.auth.signInWithPassword({
+      console.log('Pokušaj prijave za:', body.email);
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: body.email,
         password: body.password
       });
       
-      console.log('Rezultat autentikacije:', 
-        JSON.stringify({
-          success: !!authResult.data?.user,
-          errorCode: authResult.error?.code,
-          errorMessage: authResult.error?.message
-        })
-      );
+      console.log('Rezultat autentikacije:', authError ? 'Greška' : 'Uspjeh');
       
-      if (authResult.error) {
-        res.status(401).json({ 
-          message: 'Neispravni podaci za prijavu', 
-          details: authResult.error.message 
-        });
+      if (authError) {
+        console.error('Greška pri prijavi:', authError);
+        res.status(401).json({ message: 'Neispravni podaci za prijavu' });
         return;
       }
       
-      try {
-        // Dohvatanje podataka o korisniku iz users tablice
-        console.log('Dohvatanje podataka iz users tablice za ID:', authResult.data.user.id);
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authResult.data.user.id)
-          .maybeSingle(); // Koristimo maybeSingle umjesto single
-        
-        if (userError) {
-          console.error('Greška prilikom dohvatanja podataka iz users tablice:', userError);
-          throw userError;
-        }
-        
-        if (!userData) {
-          console.warn('Korisnik postoji u Auth ali ne i u users tablici, ID:', authResult.data.user.id);
-          // Ako korisnik postoji u Auth ali ne i u users tablici
-          res.status(404).json({ message: 'Korisnički profil nije pronađen' });
-          return;
-        }
-        
-        console.log('Korisnik uspješno prijavljen, vraćanje podataka:', userData.username);
-        
-        // Transformacija za frontend
+      // Dohvatanje podataka o korisniku iz users tablice
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+      
+      if (userError) {
+        console.error('Greška pri dohvatanju korisnika:', userError);
+        throw userError;
+      }
+      
+      if (!userData) {
+        console.warn('Korisnik postoji u Auth ali ne i u users tablici');
         res.status(200).json({
           message: 'Prijava uspješna',
           user: {
-            ...userData,
-            _id: userData.id // Za kompatibilnost
+            id: authData.user.id,
+            _id: authData.user.id,
+            email: authData.user.email,
+            username: authData.user.email.split('@')[0]
           },
-          token: authResult.data.session.access_token
+          token: authData.session.access_token
         });
-      } catch (error) {
-        console.error('Greška prilikom dohvatanja korisničkih podataka:', error);
-        // Fallback - vrati samo podatke iz Auth
-        console.log('Korištenje fallback podataka iz Auth');
-        res.status(200).json({
-          message: 'Prijava uspješna (fallback)',
-          user: {
-            id: authResult.data.user.id,
-            _id: authResult.data.user.id,
-            email: authResult.data.user.email,
-            username: authResult.data.user.email.split('@')[0] // Privremeno rješenje
-          },
-          token: authResult.data.session.access_token
-        });
+        return;
       }
+      
+      // Transformacija za frontend
+      res.status(200).json({
+        message: 'Prijava uspješna',
+        user: {
+          ...userData,
+          _id: userData.id
+        },
+        token: authData.session.access_token
+      });
       return;
     }
     
-    // GET /api/auth/validate-token - Validacija tokena
+    // Ostale rute
+    // GET /api/auth/validate-token
     if (req.method === 'GET' && req.url === '/api/auth/validate-token') {
-      console.log('Primljen zahtjev za validaciju tokena');
+      // Kod za validaciju tokena...
       const authHeader = req.headers.authorization;
-      
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ message: 'Nije autorizovano', valid: false });
+        res.status(401).json({ valid: false });
         return;
       }
-      
       const token = authHeader.split(' ')[1];
-      
-      console.log('Provjera tokena pomoću Supabase Auth...');
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-      
-      if (userError || !user) {
-        console.error('Token nije validan:', userError);
-        res.status(401).json({ message: 'Neispravan token', valid: false });
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data.user) {
+        res.status(401).json({ valid: false });
         return;
       }
-      
-      console.log('Token je validan za korisnika:', user.id);
       res.status(200).json({ valid: true });
       return;
     }
     
-    // POST /api/auth/change-password - Promjena šifre
-    if (req.method === 'POST' && req.url === '/api/auth/change-password') {
-      console.log('Primljen zahtjev za promjenu šifre');
-      const authHeader = req.headers.authorization;
-      
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ message: 'Nije autorizovano' });
-        return;
-      }
-      
-      const token = authHeader.split(' ')[1];
-      const body = await parseBody(req);
-      
-      // Validacija inputa
-      if (!body.currentPassword || !body.newPassword) {
-        res.status(400).json({ message: 'Sva polja su obavezna' });
-        return;
-      }
-      
-      // Dohvatanje korisnika
-      console.log('Provjera tokena...');
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-      
-      if (userError || !user) {
-        console.error('Neispravan token:', userError);
-        res.status(401).json({ message: 'Neispravan token' });
-        return;
-      }
-      
-      // Prvo provjeriti trenutnu šifru
-      console.log('Provjera trenutne šifre za korisnika:', user.id);
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: body.currentPassword
-      });
-      
-      if (signInError) {
-        console.error('Trenutna šifra nije ispravna:', signInError);
-        res.status(401).json({ message: 'Trenutna šifra nije ispravna' });
-        return;
-      }
-      
-      // Promjena šifre
-      console.log('Ažuriranje šifre za korisnika:', user.id);
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
-        user.id,
-        { password: body.newPassword }
-      );
-      
-      if (updateError) {
-        console.error('Greška prilikom ažuriranja šifre:', updateError);
-        throw updateError;
-      }
-      
-      console.log('Šifra uspješno promijenjena za korisnika:', user.id);
-      res.status(200).json({ message: 'Šifra je uspješno promijenjena' });
+    // POST /api/auth/logout
+    if (req.method === 'POST' && req.url === '/api/auth/logout') {
+      // Kod za odjavu...
+      res.status(200).json({ message: 'Odjava uspješna' });
       return;
     }
     
-    // POST /api/auth/forgot-password - Zahtjev za resetiranje šifre
-    if (req.method === 'POST' && req.url === '/api/auth/forgot-password') {
-      console.log('Primljen zahtjev za resetiranje šifre');
-      const body = await pars
+    // Ako nijedna ruta ne odgovara
+    res.status(404).json({ message: 'Ruta nije pronađena' });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Interna serverska greška', error: error.message });
+  }
+};
