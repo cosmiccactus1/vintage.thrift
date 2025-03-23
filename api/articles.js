@@ -1,30 +1,15 @@
-// Vercel serverless funkcija za upravljanje artiklima
-const { MongoClient, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
+// Vercel serverless funkcija za upravljanje artiklima putem Supabase
+const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const { Readable } = require('stream');
-const cloudinary = require('cloudinary').v2;
 
-// Konfiguracija MongoDB konekcije
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB_NAME || 'vintage_thrift_store';
-
-// Konfiguracija Cloudinary-a za upload slika
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Helper funkcija za konekciju na MongoDB
-async function connectToDatabase() {
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-  await client.connect();
-  return client.db(dbName);
-}
+// Konfiguracija Supabase klijenta
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper funkcija za verifikaciju JWT tokena
-function verifyToken(req) {
+async function verifyToken(req) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -32,9 +17,17 @@ function verifyToken(req) {
     }
     
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return decoded.userId;
+    
+    // Verifikacija tokena putem Supabase Auth API
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return null;
+    }
+    
+    return user.id;
   } catch (error) {
+    console.error('Greška prilikom verifikacije tokena:', error);
     return null;
   }
 }
@@ -59,22 +52,26 @@ async function parseMultipartForm(req) {
   });
 }
 
-// Helper funkcija za upload slika na Cloudinary
-async function uploadToCloudinary(file) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'vintage_thrift_store' },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result.secure_url);
-      }
-    );
-
-    const bufferStream = new Readable();
-    bufferStream.push(file.buffer);
-    bufferStream.push(null);
-    bufferStream.pipe(stream);
-  });
+// Helper funkcija za upload slika na Supabase Storage
+async function uploadToStorage(file) {
+  const fileName = `${Date.now()}_${file.originalname}`;
+  
+  const { data, error } = await supabase.storage
+    .from('article-images')
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype
+    });
+  
+  if (error) {
+    throw error;
+  }
+  
+  // Dohvaćanje javnog URL-a slike
+  const { data: { publicUrl } } = supabase.storage
+    .from('article-images')
+    .getPublicUrl(fileName);
+  
+  return publicUrl;
 }
 
 module.exports = async (req, res) => {
@@ -90,48 +87,76 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const db = await connectToDatabase();
-    const articlesCollection = db.collection('articles');
-    
     // GET /api/articles - Dohvaćanje svih artikala
     if (req.method === 'GET' && req.url === '/api/articles') {
-      const articles = await articlesCollection.find({ status: 'active' }).toArray();
-      res.status(200).json(articles);
+      const { data: articles, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      const formattedArticles = articles.map(article => ({
+        ...article,
+        _id: article.id
+      }));
+      
+      res.status(200).json(formattedArticles);
       return;
     }
     
     // GET /api/articles/:id - Dohvaćanje jednog artikla
-    if (req.method === 'GET' && req.url.match(/\/api\/articles\/[a-zA-Z0-9]+$/)) {
-      const id = req.url.split('/').pop();
+    if (req.method === 'GET' && req.url.match(/\/api\/articles\/([^\/]+)$/)) {
+      const id = req.url.match(/\/api\/articles\/([^\/]+)$/)[1];
       
-      if (!ObjectId.isValid(id)) {
-        res.status(400).json({ message: 'Neispravan ID artikla' });
+      const { data: article, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') { // Record not found error
+          res.status(404).json({ message: 'Artikal nije pronađen' });
+        } else {
+          throw error;
+        }
         return;
       }
       
-      const article = await articlesCollection.findOne({ _id: new ObjectId(id) });
-      
-      if (!article) {
-        res.status(404).json({ message: 'Artikal nije pronađen' });
-        return;
-      }
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      article._id = article.id;
       
       res.status(200).json(article);
       return;
     }
     
     // GET /api/articles/user/:id - Dohvaćanje artikala određenog korisnika
-    if (req.method === 'GET' && req.url.match(/\/api\/articles\/user\/[a-zA-Z0-9]+$/)) {
-      const userId = req.url.split('/').pop();
-      const articles = await articlesCollection.find({ userId }).toArray();
-      res.status(200).json(articles);
+    if (req.method === 'GET' && req.url.match(/\/api\/articles\/user\/([^\/]+)$/)) {
+      const userId = req.url.match(/\/api\/articles\/user\/([^\/]+)$/)[1];
+      
+      const { data: articles, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      const formattedArticles = articles.map(article => ({
+        ...article,
+        _id: article.id
+      }));
+      
+      res.status(200).json(formattedArticles);
       return;
     }
     
     // POST /api/articles - Kreiranje novog artikla
     if (req.method === 'POST' && req.url === '/api/articles') {
       // Provjera autentikacije
-      const userId = verifyToken(req);
+      const userId = await verifyToken(req);
       if (!userId) {
         res.status(401).json({ message: 'Nije autorizovano' });
         return;
@@ -140,10 +165,10 @@ module.exports = async (req, res) => {
       // Parsiranje form-data sa slikama
       const files = await parseMultipartForm(req);
       
-      // Učitavanje slika na Cloudinary
+      // Učitavanje slika na Supabase Storage
       const imageUrls = [];
       for (const file of files) {
-        const imageUrl = await uploadToCloudinary(file);
+        const imageUrl = await uploadToStorage(file);
         imageUrls.push(imageUrl);
       }
       
@@ -160,25 +185,30 @@ module.exports = async (req, res) => {
         brand: req.body.brand || null,
         location: req.body.location,
         images: imageUrls,
-        userId: req.body.userId,
-        status: req.body.status || 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        user_id: userId, // Koristimo user_id umjesto userId
+        status: req.body.status || 'active'
+        // created_at i updated_at će biti automatski postavljeni od strane Supabase
       };
       
-      const result = await articlesCollection.insertOne(articleData);
+      const { data, error } = await supabase
+        .from('articles')
+        .insert([articleData])
+        .select();
       
-      res.status(201).json({
-        ...articleData,
-        _id: result.insertedId
-      });
+      if (error) throw error;
+      
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      const newArticle = data[0];
+      newArticle._id = newArticle.id;
+      
+      res.status(201).json(newArticle);
       return;
     }
     
     // POST /api/articles/draft - Kreiranje nacrta artikla
     if (req.method === 'POST' && req.url === '/api/articles/draft') {
       // Provjera autentikacije
-      const userId = verifyToken(req);
+      const userId = await verifyToken(req);
       if (!userId) {
         res.status(401).json({ message: 'Nije autorizovano' });
         return;
@@ -187,10 +217,10 @@ module.exports = async (req, res) => {
       // Parsiranje form-data sa slikama
       const files = await parseMultipartForm(req);
       
-      // Učitavanje slika na Cloudinary
+      // Učitavanje slika na Supabase Storage
       const imageUrls = [];
       for (const file of files) {
-        const imageUrl = await uploadToCloudinary(file);
+        const imageUrl = await uploadToStorage(file);
         imageUrls.push(imageUrl);
       }
       
@@ -207,47 +237,55 @@ module.exports = async (req, res) => {
         brand: req.body.brand || null,
         location: req.body.location || '',
         images: imageUrls,
-        userId: req.body.userId,
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        user_id: userId, // Koristimo user_id umjesto userId
+        status: 'draft'
+        // created_at i updated_at će biti automatski postavljeni od strane Supabase
       };
       
-      const result = await articlesCollection.insertOne(draftData);
+      const { data, error } = await supabase
+        .from('articles')
+        .insert([draftData])
+        .select();
       
-      res.status(201).json({
-        ...draftData,
-        _id: result.insertedId
-      });
+      if (error) throw error;
+      
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      const newDraft = data[0];
+      newDraft._id = newDraft.id;
+      
+      res.status(201).json(newDraft);
       return;
     }
     
     // PUT /api/articles/:id - Ažuriranje artikla
-    if (req.method === 'PUT' && req.url.match(/\/api\/articles\/[a-zA-Z0-9]+$/)) {
+    if (req.method === 'PUT' && req.url.match(/\/api\/articles\/([^\/]+)$/)) {
       // Provjera autentikacije
-      const userId = verifyToken(req);
+      const userId = await verifyToken(req);
       if (!userId) {
         res.status(401).json({ message: 'Nije autorizovano' });
         return;
       }
       
-      const id = req.url.split('/').pop();
-      
-      if (!ObjectId.isValid(id)) {
-        res.status(400).json({ message: 'Neispravan ID artikla' });
-        return;
-      }
+      const id = req.url.match(/\/api\/articles\/([^\/]+)$/)[1];
       
       // Dohvatanje postojećeg artikla
-      const article = await articlesCollection.findOne({ _id: new ObjectId(id) });
+      const { data: article, error: fetchError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      if (!article) {
-        res.status(404).json({ message: 'Artikal nije pronađen' });
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          res.status(404).json({ message: 'Artikal nije pronađen' });
+        } else {
+          throw fetchError;
+        }
         return;
       }
       
       // Provjera je li korisnik vlasnik artikla
-      if (article.userId !== userId) {
+      if (article.user_id !== userId) {
         res.status(403).json({ message: 'Nemate dozvolu za ažuriranje ovog artikla' });
         return;
       }
@@ -255,14 +293,14 @@ module.exports = async (req, res) => {
       // Parsiranje form-data sa slikama
       const files = await parseMultipartForm(req);
       
-      // Učitavanje novih slika na Cloudinary
+      // Učitavanje novih slika
       let imageUrls = article.images || [];
       
       if (files && files.length > 0) {
         // Ako su poslane nove slike, učitaj ih
         const newImageUrls = [];
         for (const file of files) {
-          const imageUrl = await uploadToCloudinary(file);
+          const imageUrl = await uploadToStorage(file);
           newImageUrls.push(imageUrl);
         }
         
@@ -289,54 +327,64 @@ module.exports = async (req, res) => {
         location: req.body.location || article.location,
         images: imageUrls,
         status: req.body.status || article.status,
-        updatedAt: new Date()
+        updated_at: new Date()
       };
       
-      await articlesCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updateData }
-      );
+      const { data, error: updateError } = await supabase
+        .from('articles')
+        .update(updateData)
+        .eq('id', id)
+        .select();
       
-      res.status(200).json({
-        ...updateData,
-        _id: id,
-        userId: article.userId,
-        createdAt: article.createdAt
-      });
+      if (updateError) throw updateError;
+      
+      // Transformacija ID-a za kompatibilnost (id -> _id)
+      const updatedArticle = data[0];
+      updatedArticle._id = updatedArticle.id;
+      
+      res.status(200).json(updatedArticle);
       return;
     }
     
     // DELETE /api/articles/:id - Brisanje artikla
-    if (req.method === 'DELETE' && req.url.match(/\/api\/articles\/[a-zA-Z0-9]+$/)) {
+    if (req.method === 'DELETE' && req.url.match(/\/api\/articles\/([^\/]+)$/)) {
       // Provjera autentikacije
-      const userId = verifyToken(req);
+      const userId = await verifyToken(req);
       if (!userId) {
         res.status(401).json({ message: 'Nije autorizovano' });
         return;
       }
       
-      const id = req.url.split('/').pop();
-      
-      if (!ObjectId.isValid(id)) {
-        res.status(400).json({ message: 'Neispravan ID artikla' });
-        return;
-      }
+      const id = req.url.match(/\/api\/articles\/([^\/]+)$/)[1];
       
       // Dohvatanje postojećeg artikla
-      const article = await articlesCollection.findOne({ _id: new ObjectId(id) });
+      const { data: article, error: fetchError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      if (!article) {
-        res.status(404).json({ message: 'Artikal nije pronađen' });
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          res.status(404).json({ message: 'Artikal nije pronađen' });
+        } else {
+          throw fetchError;
+        }
         return;
       }
       
       // Provjera je li korisnik vlasnik artikla
-      if (article.userId !== userId) {
+      if (article.user_id !== userId) {
         res.status(403).json({ message: 'Nemate dozvolu za brisanje ovog artikla' });
         return;
       }
       
-      await articlesCollection.deleteOne({ _id: new ObjectId(id) });
+      const { error: deleteError } = await supabase
+        .from('articles')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) throw deleteError;
       
       res.status(200).json({ message: 'Artikal je uspješno obrisan' });
       return;
