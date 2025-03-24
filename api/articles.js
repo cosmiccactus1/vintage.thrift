@@ -228,7 +228,8 @@ module.exports = async (req, res) => {
           title, 
           description, 
           price, 
-          category, 
+          category,
+          size, // Dodano polje size
           status = 'active', 
           userId: payloadUserId 
         } = formData;
@@ -252,6 +253,7 @@ module.exports = async (req, res) => {
             description,
             price: parseFloat(price),
             category,
+            size, // Dodano polje size
             status,
             user_id: userId,
             images: images || []
