@@ -23,10 +23,43 @@ function checkUserLoggedIn() {
         const userData = JSON.parse(userDataString);
         // Dodano - Provjera parsiranog objekta
         console.log('Parsirani podaci korisnika:', userData);
-        // Dodano - Provjera tokena
-        console.log('Token korisnika:', userData.token);
         
-        return userData;
+        // DODATNA PROVJERA I PRILAGODBA TOKENA
+        let token = userData.token;
+        console.log('Originalni token:', token);
+        console.log('Tip tokena:', typeof token);
+        
+        // Ako token nije string nego objekt ili je ugniježđen u drugoj strukturi
+        if (typeof token === 'object' && token !== null) {
+            console.log('Token je objekt, pokušavam pronaći token string unutar njega');
+            // Ako je token objekt, pokušaj pronaći access_token ili sličan ključ
+            token = token.access_token || token.accessToken || token.jwt || JSON.stringify(token);
+        }
+        
+        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
+        if (!token && userData.session && userData.session.access_token) {
+            console.log('Token pronađen u session objektu');
+            token = userData.session.access_token;
+        }
+        
+        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
+        if (!token && userData.user && userData.user.token) {
+            console.log('Token pronađen u user.token');
+            token = userData.user.token;
+        }
+        
+        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
+        if (!token && userData.accessToken) {
+            console.log('Token pronađen u accessToken');
+            token = userData.accessToken;
+        }
+        
+        console.log('Konačni token koji će biti korišten:', token);
+        
+        return {
+            ...userData,
+            token: token // Koristi prilagođeni token
+        };
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
         return null;
@@ -239,11 +272,31 @@ async function saveAsDraft() {
 async function publishArticle(e) {
     e.preventDefault();
     
-    const userData = checkUserLoggedIn();
-    if (!userData) return;
+    // DEBUGGING - Raw localStorage data
+    console.log('Raw localStorage data:', localStorage.getItem('prijavljeniKorisnik'));
+    try {
+        const testData = JSON.parse(localStorage.getItem('prijavljeniKorisnik'));
+        console.log('Complete parsed localStorage structure:', testData);
+        console.log('Keys in userData:', Object.keys(testData));
+        
+        // Pokušaj pronalaska tokena u različitim mjestima u strukturi
+        if (testData.token) console.log('token property exists:', testData.token);
+        if (testData.accessToken) console.log('accessToken property exists:', testData.accessToken);
+        if (testData.session && testData.session.access_token) {
+            console.log('session.access_token exists:', testData.session.access_token);
+        }
+        if (testData.user && testData.user.token) {
+            console.log('user.token exists:', testData.user.token);
+        }
+    } catch (e) {
+        console.error('Error analyzing localStorage:', e);
+    }
     
-    // Dodajemo logging da vidimo šta sadrži userData
-    console.log('userData:', userData);
+    const userData = checkUserLoggedIn();
+    if (!userData) {
+        console.error('Korisnik nije prijavljen ili nema validan token');
+        return;
+    }
     
     // Validacija forme
     if (!validateForm()) {
@@ -269,28 +322,48 @@ async function publishArticle(e) {
         // Ispišimo šta ćemo poslati
         console.log('Šaljem zahtjev na:', '/api/articles');
         console.log('userID:', userData.id);
-        console.log('Token (ako postoji):', userData.token);
+        console.log('Token za slanje:', userData.token);
         console.log('Podaci za slanje:', articleData);
         
-        // API poziv za objavljivanje artikla
-        const response = await fetch('/api/articles', {
+        // Kreiranje točnog Authorization headera
+        const authHeader = `Bearer ${userData.token}`;
+        console.log('Exact Authorization header:', authHeader);
+        
+        // Pretvaranje u JSON
+        const jsonData = JSON.stringify(articleData);
+        console.log('JSON string being sent:', jsonData);
+        
+        // Kreiranje opcija za fetch
+        const fetchOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userData.token}`
+                'Authorization': authHeader
             },
-            body: JSON.stringify(articleData)
-        });
+            body: jsonData
+        };
+        console.log('Complete fetch options:', fetchOptions);
+        
+        // API poziv za objavljivanje artikla
+        const response = await fetch('/api/articles', fetchOptions);
         
         // Logiramo status odgovora
         console.log('Status odgovora:', response.status);
+        console.log('Status text:', response.statusText);
         
         if (!response.ok) {
             // Pokušavamo dobiti više detalja o grešci
             let errorText;
             try {
                 errorText = await response.text();
-                console.error('API error response:', errorText);
+                console.error('API error response text:', errorText);
+                
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    console.error('API error response JSON:', errorJson);
+                } catch (e) {
+                    console.log('Error response is not JSON');
+                }
             } catch (e) {
                 console.error('Nije moguće pročitati odgovor:', e);
             }
@@ -389,14 +462,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeneri za uklanjanje klase error prilikom unosa
     const formFields = document.querySelectorAll('input, select, textarea');
     formFields.forEach(field => {
-        field.addEventListener('input', function() {
-            this.classList.remove('error');
-            
-            // Uklanjanje eventualne poruke o grešci
-            const errorMessage = this.parentNode.querySelector('.error-message');
-            if (errorMessage) {
-                errorMessage.remove();
-            }
-        });
-    });
-});
+        field.addEventListener('inp
