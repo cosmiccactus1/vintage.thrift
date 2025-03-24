@@ -196,19 +196,9 @@ async function saveAsDraft() {
     formData.append('userId', userData.id);
     
     try {
-        // Dohvatanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        if (!token) {
-            throw new Error('Niste prijavljeni. Molimo prijavite se prije spremanja nacrta.');
-        }
-        
         // API poziv za spremanje nacrta
         const response = await fetch('/api/articles/draft', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             body: formData
         });
         
@@ -256,20 +246,9 @@ async function publishArticle(e) {
     formData.append('userId', userData.id);
     
     try {
-        // Dohvatanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        if (!token) {
-            throw new Error('Niste prijavljeni. Molimo prijavite se prije objavljivanja artikla.');
-        }
-        
         // API poziv za objavljivanje artikla
         const response = await fetch('/api/articles', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // Ne postavljamo Content-Type jer FormData automatski postavlja odgovarajući multipart/form-data
-            },
             body: formData
         });
         
