@@ -28,6 +28,15 @@ async function fetchProduct(id) {
         
         const data = await response.json();
         console.log("API response:", data);
+        
+        // Ako API vraća niz, uzmemo prvi element (ili element koji odgovara ID-u)
+        if (Array.isArray(data) && data.length > 0) {
+            // Pokušaj pronaći artikal s odgovarajućim ID-em
+            const product = data.find(item => (item._id === id || item.id === id));
+            // Ako ne nađemo odgovarajući artikal, uzmi prvi
+            return product || data[0];
+        }
+        
         return data;
     } catch (error) {
         console.error('Greška:', error);
@@ -40,11 +49,8 @@ async function fetchFavoriteStatus(id) {
     try {
         const response = await fetch(`/api/favorites/check/${id}`);
         if (!response.ok) {
-            // Ako API nije implementiran, pretpostavljamo da proizvod nije favorit
-            if (response.status === 404) {
-                return false;
-            }
-            throw new Error('Greška prilikom provjere statusa favorita');
+            // Samo vrati false ako API nije implementiran
+            return false;
         }
         
         const data = await response.json();
@@ -60,11 +66,8 @@ async function fetchCartStatus(id) {
     try {
         const response = await fetch(`/api/cart/check/${id}`);
         if (!response.ok) {
-            // Ako API nije implementiran, pretpostavljamo da proizvod nije u korpi
-            if (response.status === 404) {
-                return false;
-            }
-            throw new Error('Greška prilikom provjere statusa korpe');
+            // Samo vrati false ako API nije implementiran
+            return false;
         }
         
         const data = await response.json();
@@ -111,18 +114,23 @@ function renderProduct(product, isFavorite, isInCart) {
     // Formatiranje cijene
     const formattedPrice = parseFloat(product.price).toFixed(2);
     
+    // Provjera postoji li placeholder slika, koristimo online placeholder
+    const onlinePlaceholder = 'https://via.placeholder.com/400x300?text=No+Image';
+    
     // Priprema HTML-a za galeriju slika
     let imagesHTML = '';
     if (product.images && product.images.length > 0) {
         imagesHTML = `
             <div class="product-main-image">
-                <img src="${product.images[0]}" alt="${product.title}" id="mainImage">
+                <img src="${product.images[0]}" alt="${product.title}" id="mainImage"
+                     onerror="this.onerror=null; this.src='${onlinePlaceholder}';">
             </div>
             ${product.images.length > 1 ? `
             <div class="product-thumbnails">
                 ${product.images.map((img, index) => `
                     <div class="thumbnail ${index === 0 ? 'active' : ''}" data-index="${index}">
-                        <img src="${img}" alt="${product.title} - slika ${index + 1}">
+                        <img src="${img}" alt="${product.title} - slika ${index + 1}"
+                             onerror="this.onerror=null; this.src='${onlinePlaceholder}';">
                     </div>
                 `).join('')}
             </div>` : ''}
@@ -130,7 +138,7 @@ function renderProduct(product, isFavorite, isInCart) {
     } else {
         imagesHTML = `
             <div class="product-main-image">
-                <img src="images/placeholder.jpg" alt="${product.title}" id="mainImage">
+                <img src="${onlinePlaceholder}" alt="${product.title}" id="mainImage">
             </div>
         `;
     }
@@ -140,8 +148,8 @@ function renderProduct(product, isFavorite, isInCart) {
     
     // Formatiranje datuma
     let formattedDate = "Nije dostupno";
-    if (product.created_at || product.createdAt) {
-        const dateCreated = new Date(product.created_at || product.createdAt);
+    if (product.created_at || product.createdAt || product.updated_at || product.updatedAt) {
+        const dateCreated = new Date(product.created_at || product.createdAt || product.updated_at || product.updatedAt);
         formattedDate = `${dateCreated.getDate()}.${dateCreated.getMonth() + 1}.${dateCreated.getFullYear()}.`;
     }
     
@@ -230,7 +238,12 @@ function renderProduct(product, isFavorite, isInCart) {
         document.querySelectorAll('.thumbnail').forEach(thumb => {
             thumb.addEventListener('click', function() {
                 const index = parseInt(this.getAttribute('data-index'));
-                document.getElementById('mainImage').src = product.images[index];
+                const mainImage = document.getElementById('mainImage');
+                mainImage.src = product.images[index];
+                mainImage.onerror = function() {
+                    this.onerror = null;
+                    this.src = onlinePlaceholder;
+                };
                 
                 // Ažuriranje aktivnog thumbnaila
                 document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
@@ -242,13 +255,27 @@ function renderProduct(product, isFavorite, isInCart) {
     // Event listener za dugme za favorite
     const favoriteBtn = document.getElementById('favoriteBtn');
     if (favoriteBtn) {
-        favoriteBtn.addEventListener('click', toggleFavorite);
+        favoriteBtn.addEventListener('click', async function() {
+            try {
+                await toggleFavorite();
+            } catch (e) {
+                console.error("Error toggling favorite:", e);
+                alert("Ova funkcionalnost trenutno nije dostupna.");
+            }
+        });
     }
     
     // Event listener za dugme za korpu
     const cartBtn = document.getElementById('cartBtn');
     if (cartBtn) {
-        cartBtn.addEventListener('click', toggleCart);
+        cartBtn.addEventListener('click', async function() {
+            try {
+                await toggleCart();
+            } catch (e) {
+                console.error("Error toggling cart:", e);
+                alert("Ova funkcionalnost trenutno nije dostupna.");
+            }
+        });
     }
 }
 
@@ -282,7 +309,7 @@ function getSeasonName(seasonCode) {
         'sve': 'Sva godišnja doba'
     };
     
-    return seasons[seasonCode] || seasonCode;
+    return seasons[seasonCode] || seasonCode || 'Nije navedeno';
 }
 
 // Dobijanje naziva stanja na osnovu koda
@@ -295,7 +322,7 @@ function getConditionName(conditionCode) {
         'prihvatljivo': 'Prihvatljivo'
     };
     
-    return conditions[conditionCode] || conditionCode;
+    return conditions[conditionCode] || conditionCode || 'Nije navedeno';
 }
 
 // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
