@@ -16,13 +16,18 @@ function getProductIdFromUrl() {
 // Dohvatanje proizvoda s API-ja
 async function fetchProduct(id) {
     try {
-        const response = await fetch(`/api/articles/${id}`);
+        // Dodajte console.log za provjeru URL-a
+        const url = `/api/articles/${id}`;
+        console.log("Fetching product from URL:", url);
+        
+        const response = await fetch(url);
         if (!response.ok) {
+            console.error(`Error response: ${response.status} ${response.statusText}`);
             throw new Error('Greška prilikom dohvatanja proizvoda');
         }
         
         const data = await response.json();
-        console.log("API response:", data); // Debugging
+        console.log("API response:", data);
         return data;
     } catch (error) {
         console.error('Greška:', error);
