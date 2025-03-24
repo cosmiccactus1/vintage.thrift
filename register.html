@@ -1,22 +1,275 @@
-loginForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    
-    try {
-        const user = await loginUser(email, password);
-        console.log('Prijava uspješna:', user);
-        
-        // DODAJ OVE LINIJE:
-        if (user.token) {
-            localStorage.setItem('authToken', user.token);
-            localStorage.setItem('userId', user.user.id || user.user._id);
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Thrift Store - Registracija</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">Vintage Thrift Store</div>
+            <div class="menu-container">
+                <div class="hamburger-icon" id="hamburgerIcon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="category-section">
+                        <h3>Godišnje doba</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-season="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="index.html" class="filter-option" data-season="zima">Zima</a></li>
+                        </ul>
+                    </div>
+                    <div class="category-section">
+                        <h3>Kategorija</h3>
+                        <ul>
+                            <li><a href="index.html" class="filter-option" data-type="sve">Sve</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="musko">Muško</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="zensko">Žensko</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="djecije">Dječije</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jakne">Jakne</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="duksevi">Duksevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="majice">Majice</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="jeans">Jeans</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="handmade">Handmade</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="starine">Starine</a></li>
+                            <li><a href="index.html" class="filter-option" data-type="ostalo">Ostalo</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Početna</a></li>
+                    <li><a href="favorites.html">Favoriti</a></li>
+                    <li><a href="cart.html">Korpa</a></li>
+                    <li><a href="register.html" class="sell-button active">Registracija</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="auth-container">
+        <div class="auth-tabs">
+            <button class="auth-tab" data-tab="login">Prijava</button>
+            <button class="auth-tab active" data-tab="register">Registracija</button>
+        </div>
+
+        <div class="auth-content">
+            <!-- Login forma -->
+            <div class="auth-form" id="login-form">
+                <h2>Prijava na račun</h2>
+                <form id="login-form-element">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required placeholder="Unesite vašu email adresu">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Lozinka</label>
+                        <input type="password" id="login-password" name="password" required placeholder="Unesite vašu lozinku">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="auth-button">Prijavi se</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Register forma -->
+            <div class="auth-form active" id="register-form">
+                <h2>Registracija za prodaju</h2>
+                <p class="auth-subtitle">Registrirajte se i počnite prodavati svoju odjeću</p>
+                <form id="register-form-element">
+                    <div class="form-group">
+                        <label for="register-username">Korisničko ime</label>
+                        <input type="text" id="register-username" name="username" required placeholder="Odaberite korisničko ime">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" name="email" required placeholder="Unesite vašu email adresu">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Lozinka</label>
+                        <input type="password" id="register-password" name="password" required placeholder="Kreirajte lozinku (min. 8 znakova)">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">Potvrdite lozinku</label>
+                        <input type="password" id="register-confirm-password" name="confirm-password" required placeholder="Ponovite lozinku">
+                    </div>
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label for="terms">Slažem se s <a href="#" class="terms-link">Uvjetima korištenja</a> i <a href="#" class="privacy-link">Pravilima o privatnosti</a></label>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="auth-button">Registriraj se</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Vintage Thrift Store &copy; 2025</p>
+    </footer>
+
+    <script>
+        // Funkcije za autentikaciju
+        async function loginUser(email, password) {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Greška prilikom prijave');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Greška prilikom prijave:', error);
+                throw error;
+            }
         }
         
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error('Greška prilikom prijave:', error);
-        alert(error.message || 'Greška prilikom prijave');
-    }
-});
+        async function registerUser(userData) {
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Greška prilikom registracije');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Greška prilikom registracije:', error);
+                throw error;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hamburger menu funkcionalnost
+            const hamburgerIcon = document.getElementById('hamburgerIcon');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            if (hamburgerIcon && menuDropdown) {
+                hamburgerIcon.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    menuDropdown.classList.toggle('show');
+                });
+                
+                // Zatvaranje menija klikom izvan
+                document.addEventListener('click', function(e) {
+                    if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+                        hamburgerIcon.classList.remove('active');
+                        menuDropdown.classList.remove('show');
+                    }
+                });
+            }
+            
+            // Funkcionalnost za tabove
+            const authTabs = document.querySelectorAll('.auth-tab');
+            const authForms = document.querySelectorAll('.auth-form');
+            
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // Ukloni active klasu sa svih tabova i formi
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    authForms.forEach(f => f.classList.remove('active'));
+                    
+                    // Dodaj active klasu na odabrani tab i formu
+                    this.classList.add('active');
+                    document.getElementById(`${tabName}-form`).classList.add('active');
+                });
+            });
+            
+            // Dodaj event listenere za forme
+            const loginForm = document.getElementById('login-form-element');
+            const registerForm = document.getElementById('register-form-element');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    
+                    try {
+                        const data = await loginUser(email, password);
+                        console.log('Prijava uspješna:', data);
+                        
+                        // DODANO: Spremi token i ID korisnika
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('userId', data.user.id || data.user._id);
+                        
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error('Greška prilikom prijave:', error);
+                        alert(error.message || 'Greška prilikom prijave');
+                    }
+                });
+            }
+
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('register-username').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm-password').value;
+                    
+                    if (password !== confirmPassword) {
+                        alert('Lozinke se ne podudaraju');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('Pokušaj registracije sa:', { username, email });
+                        const data = await registerUser({
+                            username,
+                            email,
+                            password
+                        });
+                        console.log('Registracija uspješna:', data);
+                        
+                        // DODANO: Spremi token i ID korisnika
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('userId', data.user.id || data.user._id);
+                        
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error('Greška prilikom registracije:', error);
+                        alert(error.message || 'Greška prilikom registracije');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
