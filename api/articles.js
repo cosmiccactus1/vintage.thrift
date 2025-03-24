@@ -147,10 +147,11 @@ module.exports = async (req, res) => {
         
         if (error) throw error;
         
-        // Transformacija ID-a za kompatibilnost (id -> _id)
+        // Transformacija ID-a za kompatibilnost (id -> _id) i parsiranje images
         const formattedArticles = articles.map(article => ({
           ...article,
-          _id: article.id
+          _id: article.id,
+          images: article.images ? JSON.parse(article.images) : []
         }));
         
         res.status(200).json(formattedArticles);
@@ -174,8 +175,9 @@ module.exports = async (req, res) => {
           return;
         }
         
-        // Transformacija ID-a za kompatibilnost (id -> _id)
+        // Transformacija ID-a za kompatibilnost (id -> _id) i parsiranje images
         article._id = article.id;
+        article.images = article.images ? JSON.parse(article.images) : [];
         
         res.status(200).json(article);
         return;
@@ -183,12 +185,13 @@ module.exports = async (req, res) => {
       
       // Dohvaćanje artikala korisnika
       if (parsedURL.type === 'user_articles') {
+        // Priprema osnovne query s filterom po user_id
         let query = supabase
           .from('articles')
           .select('*')
           .eq('user_id', parsedURL.userId);
         
-        // Provjera autentikacije samo za vlastite artikle
+        // Provjera autentikacije
         const authUserId = await verifyToken(req);
         
         // Ako korisnik nije vlasnik artikala, prikaži samo aktivne artikle
@@ -200,10 +203,11 @@ module.exports = async (req, res) => {
         
         if (error) throw error;
         
-        // Transformacija ID-a za kompatibilnost (id -> _id)
+        // Transformacija ID-a za kompatibilnost (id -> _id) i parsiranje images
         const formattedArticles = articles.map(article => ({
           ...article,
-          _id: article.id
+          _id: article.id,
+          images: article.images ? JSON.parse(article.images) : []
         }));
         
         res.status(200).json(formattedArticles);
@@ -315,7 +319,7 @@ module.exports = async (req, res) => {
             location,
             status,
             user_id: userId,
-            images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null // Spremamo kao JSON string
+            images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null
           })
           .select();
 
@@ -326,6 +330,11 @@ module.exports = async (req, res) => {
             error: error.message 
           });
           return;
+        }
+
+        // Parsiranje images prije slanja odgovora
+        if (data && data.length > 0 && data[0].images) {
+          data[0].images = JSON.parse(data[0].images);
         }
 
         res.status(201).json(data[0]);
