@@ -10,8 +10,9 @@ let uploadedImages = [];
 function checkUserLoggedIn() {
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
     const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken');
     
-    if (!userDataString || !userId) {
+    if (!userDataString || !userId || !token) {
         // Ako korisnik nije prijavljen, preusmjeri na register.html
         window.location.href = 'register.html';
         return null;
@@ -22,6 +23,7 @@ function checkUserLoggedIn() {
         return { ...userData, id: userId };
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
+        window.location.href = 'register.html';
         return null;
     }
 }
@@ -174,7 +176,12 @@ function validateForm() {
         const errorMessage = document.createElement('div');
         errorMessage.className = 'error-message';
         errorMessage.textContent = 'Potrebno je dodati bar jednu sliku';
-        document.querySelector('.form-group:has(.photo-upload-container)').appendChild(errorMessage);
+        const parentElement = document.querySelector('.form-group:has(.photo-upload-container)');
+        if (parentElement) {
+            parentElement.appendChild(errorMessage);
+        } else {
+            document.querySelector('.photo-upload-container').parentNode.appendChild(errorMessage);
+        }
     }
     
     return isValid;
@@ -185,25 +192,27 @@ async function saveAsDraft() {
     const userData = checkUserLoggedIn();
     if (!userData) return;
     
-    // Dohvaćanje vrijednosti forme
-    const formData = new FormData(document.getElementById('prodaj-form'));
-    
-    // Dodavanje slika u formData
-    uploadedImages.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-    });
-    
-    // Dodavanje statusa i korisničkog ID-a
-    formData.append('status', 'draft');
-    formData.append('userId', userData.id);
-    
     try {
+        // Dohvaćanje vrijednosti forme
+        const formData = new FormData(document.getElementById('prodaj-form'));
+        
+        // Dodavanje slika u formData
+        uploadedImages.forEach((image, index) => {
+            formData.append(`image${index}`, image);
+        });
+        
+        // Dodavanje statusa i korisničkog ID-a
+        formData.append('status', 'draft');
+        formData.append('userId', userData.id);
+        
         // Dohvatanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
         if (!token) {
             throw new Error('Niste prijavljeni. Molimo prijavite se prije spremanja nacrta.');
         }
+        
+        showMessage('Spremanje nacrta u toku...', 'info');
         
         // API poziv za spremanje nacrta
         const response = await fetch('/api/articles/draft', {
@@ -215,8 +224,30 @@ async function saveAsDraft() {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Greška prilikom spremanja nacrta');
+            let errorMessage = 'Greška prilikom spremanja nacrta';
+            
+            try {
+                const errorText = await response.text();
+                try {
+                    // Pokušaj parsirati JSON
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (jsonError) {
+                    // Ako nije JSON, uzmi tekst
+                    if (errorText) {
+                        errorMessage = `Server error: ${errorText.slice(0, 100)}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Nije moguće pročitati odgovor:', e);
+            }
+            
+            // Posebna poruka za timeout
+            if (response.status === 504) {
+                errorMessage = 'Spremanje je trajalo predugo. Probajte sa manjim slikama.';
+            }
+            
+            throw new Error(errorMessage);
         }
         
         // Ažuriranje UI-a
@@ -246,25 +277,27 @@ async function publishArticle(e) {
         return;
     }
     
-    // Dohvaćanje vrijednosti forme
-    const formData = new FormData(document.getElementById('prodaj-form'));
-    
-    // Dodavanje slika u formData
-    uploadedImages.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-    });
-    
-    // Dodavanje statusa i korisničkog ID-a
-    formData.append('status', 'active');
-    formData.append('userId', userData.id);
-    
     try {
+        // Dohvaćanje vrijednosti forme
+        const formData = new FormData(document.getElementById('prodaj-form'));
+        
+        // Dodavanje slika u formData
+        uploadedImages.forEach((image, index) => {
+            formData.append(`image${index}`, image);
+        });
+        
+        // Dodavanje statusa i korisničkog ID-a
+        formData.append('status', 'active');
+        formData.append('userId', userData.id);
+        
         // Dohvatanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
         if (!token) {
             throw new Error('Niste prijavljeni. Molimo prijavite se prije objavljivanja artikla.');
         }
+        
+        showMessage('Objavljivanje artikla u toku...', 'info');
         
         // API poziv za objavljivanje artikla
         const response = await fetch('/api/articles', {
@@ -276,8 +309,30 @@ async function publishArticle(e) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Greška prilikom objavljivanja artikla');
+            let errorMessage = 'Greška prilikom objavljivanja artikla';
+            
+            try {
+                const errorText = await response.text();
+                try {
+                    // Pokušaj parsirati JSON
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (jsonError) {
+                    // Ako nije JSON, uzmi tekst
+                    if (errorText) {
+                        errorMessage = `Server error: ${errorText.slice(0, 100)}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Nije moguće pročitati odgovor:', e);
+            }
+            
+            // Posebna poruka za timeout
+            if (response.status === 504) {
+                errorMessage = 'Objavljivanje je trajalo predugo. Probajte sa manjim slikama.';
+            }
+            
+            throw new Error(errorMessage);
         }
         
         // Ažuriranje UI-a
@@ -349,6 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Provjera je li korisnik prijavljen
     const userData = checkUserLoggedIn();
     if (!userData) return;
+    
+    console.log('Korisnik prijavljen:', userData);
     
     // Inicijalizacija hamburger menija
     initHamburgerMenu();
