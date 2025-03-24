@@ -22,6 +22,7 @@ async function fetchProduct(id) {
         }
         
         const data = await response.json();
+        console.log("API response:", data); // Debugging
         return data;
     } catch (error) {
         console.error('Greška:', error);
@@ -34,13 +35,17 @@ async function fetchFavoriteStatus(id) {
     try {
         const response = await fetch(`/api/favorites/check/${id}`);
         if (!response.ok) {
+            // Ako API nije implementiran, pretpostavljamo da proizvod nije favorit
+            if (response.status === 404) {
+                return false;
+            }
             throw new Error('Greška prilikom provjere statusa favorita');
         }
         
         const data = await response.json();
         return data.isFavorite;
     } catch (error) {
-        console.error('Greška:', error);
+        console.error('Greška pri dohvaćanju statusa favorita:', error);
         return false;
     }
 }
@@ -50,13 +55,17 @@ async function fetchCartStatus(id) {
     try {
         const response = await fetch(`/api/cart/check/${id}`);
         if (!response.ok) {
+            // Ako API nije implementiran, pretpostavljamo da proizvod nije u korpi
+            if (response.status === 404) {
+                return false;
+            }
             throw new Error('Greška prilikom provjere statusa korpe');
         }
         
         const data = await response.json();
         return data.isInCart;
     } catch (error) {
-        console.error('Greška:', error);
+        console.error('Greška pri dohvaćanju statusa korpe:', error);
         return false;
     }
 }
@@ -74,6 +83,24 @@ function renderProduct(product, isFavorite, isInCart) {
             </div>
         `;
         return;
+    }
+    
+    console.log("Rendering product:", product); // Debugging
+    
+    // Parsiranje slika ako su u JSON formatu
+    if (product.images && typeof product.images === 'string') {
+        try {
+            product.images = JSON.parse(product.images);
+            console.log("Parsed images:", product.images);
+        } catch (e) {
+            console.error("Error parsing images:", e);
+            product.images = [];
+        }
+    }
+    
+    // Osigurajmo da je images niz
+    if (!Array.isArray(product.images)) {
+        product.images = product.images ? [product.images] : [];
     }
     
     // Formatiranje cijene
@@ -107,8 +134,11 @@ function renderProduct(product, isFavorite, isInCart) {
     const categoryName = getCategoryName(product.category);
     
     // Formatiranje datuma
-    const dateCreated = new Date(product.createdAt);
-    const formattedDate = `${dateCreated.getDate()}.${dateCreated.getMonth() + 1}.${dateCreated.getFullYear()}.`;
+    let formattedDate = "Nije dostupno";
+    if (product.created_at || product.createdAt) {
+        const dateCreated = new Date(product.created_at || product.createdAt);
+        formattedDate = `${dateCreated.getDate()}.${dateCreated.getMonth() + 1}.${dateCreated.getFullYear()}.`;
+    }
     
     // Generiranje HTML-a za prikaz proizvoda
     container.innerHTML = `
@@ -137,29 +167,31 @@ function renderProduct(product, isFavorite, isInCart) {
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Veličina:</span>
-                    <span class="metadata-value">${product.size}</span>
+                    <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Sezona:</span>
-                    <span class="metadata-value">${getSeasonName(product.season)}</span>
+                    <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Stanje:</span>
-                    <span class="metadata-value">${getConditionName(product.condition)}</span>
+                    <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
                 </div>
                 ${product.brand ? `
                 <div class="metadata-item">
                     <span class="metadata-label">Brend:</span>
                     <span class="metadata-value">${product.brand}</span>
                 </div>` : ''}
+                ${product.color ? `
                 <div class="metadata-item">
                     <span class="metadata-label">Boja:</span>
                     <span class="metadata-value">${product.color}</span>
-                </div>
+                </div>` : ''}
+                ${product.location ? `
                 <div class="metadata-item">
                     <span class="metadata-label">Lokacija:</span>
                     <span class="metadata-value">${product.location}</span>
-                </div>
+                </div>` : ''}
                 <div class="metadata-item">
                     <span class="metadata-label">Objavljeno:</span>
                     <span class="metadata-value">${formattedDate}</span>
@@ -169,7 +201,7 @@ function renderProduct(product, isFavorite, isInCart) {
             <div class="product-description">
                 <h2>Opis</h2>
                 <div class="description-content">
-                    ${product.description}
+                    ${product.description || 'Nema opisa za ovaj proizvod.'}
                 </div>
             </div>
             
@@ -181,7 +213,7 @@ function renderProduct(product, isFavorite, isInCart) {
                     </div>
                     <div class="seller-details">
                         <div class="seller-name">${product.sellerName || 'Korisnik'}</div>
-                        <div class="seller-location">${product.location}</div>
+                        <div class="seller-location">${product.location || 'Nije navedeno'}</div>
                     </div>
                 </div>
             </div>
@@ -232,7 +264,7 @@ function getCategoryName(categoryCode) {
         'ostalo': 'Ostalo'
     };
     
-    return categories[categoryCode] || categoryCode;
+    return categories[categoryCode] || categoryCode || 'Nije navedeno';
 }
 
 // Dobijanje naziva sezone na osnovu koda
@@ -270,7 +302,7 @@ async function toggleFavorite() {
     
     try {
         // Poziv API-ja za dodavanje/uklanjanje iz favorita
-        const response = await fetch(`/api/favorites/${currentProduct._id}`, {
+        const response = await fetch(`/api/favorites/${currentProduct._id || currentProduct.id}`, {
             method: isFavorite ? 'DELETE' : 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -309,7 +341,7 @@ async function toggleCart() {
     
     try {
         // Poziv API-ja za dodavanje/uklanjanje iz korpe
-        const response = await fetch(`/api/cart/${currentProduct._id}`, {
+        const response = await fetch(`/api/cart/${currentProduct._id || currentProduct.id}`, {
             method: isInCart ? 'DELETE' : 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -344,6 +376,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Dohvatanje ID-a proizvoda iz URL-a
     productId = getProductIdFromUrl();
     
+    console.log("Product ID from URL:", productId); // Debugging
+    
     if (!productId) {
         // Ako nema ID-a, prikaži poruku o grešci
         document.getElementById('product-detail').innerHTML = `
@@ -358,15 +392,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     const product = await fetchProduct(productId);
     
     if (!product) {
-        return; // renderProduct će prikazati poruku o grešci
+        document.getElementById('product-detail').innerHTML = `
+            <div class="error-message">
+                <p>Proizvod nije pronađen ili server nije dostupan. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
+            </div>
+        `;
+        return;
     }
     
     // Spremanje proizvoda u globalnu varijablu
     currentProduct = product;
     
     // Dohvatanje statusa favorita i korpe
-    const isFavorite = await fetchFavoriteStatus(productId);
-    const isInCart = await fetchCartStatus(productId);
+    let isFavorite = false;
+    let isInCart = false;
+    
+    try {
+        isFavorite = await fetchFavoriteStatus(productId);
+        isInCart = await fetchCartStatus(productId);
+    } catch (e) {
+        console.error("Error fetching status:", e);
+        // Nastavi bez statusa ako dohvat nije uspio
+    }
     
     // Prikaz proizvoda
     renderProduct(product, isFavorite, isInCart);
