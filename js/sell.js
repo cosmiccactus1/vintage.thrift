@@ -10,6 +10,9 @@ let uploadedImages = [];
 function checkUserLoggedIn() {
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
     
+    // Dodano - Provjera sadržaja localStorage
+    console.log('Podaci iz localStorage:', userDataString);
+    
     if (!userDataString) {
         // Ako korisnik nije prijavljen, preusmjeri na register.html
         window.location.href = 'register.html';
@@ -17,7 +20,13 @@ function checkUserLoggedIn() {
     }
     
     try {
-        return JSON.parse(userDataString);
+        const userData = JSON.parse(userDataString);
+        // Dodano - Provjera parsiranog objekta
+        console.log('Parsirani podaci korisnika:', userData);
+        // Dodano - Provjera tokena
+        console.log('Token korisnika:', userData.token);
+        
+        return userData;
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
         return null;
@@ -199,6 +208,10 @@ async function saveAsDraft() {
         // API poziv za spremanje nacrta
         const response = await fetch('/api/articles/draft', {
             method: 'POST',
+            headers: {
+                // Dodajemo Authorization header ako postoji token
+                ...(userData.token ? { 'Authorization': `Bearer ${userData.token}` } : {})
+            },
             body: formData
         });
         
@@ -227,6 +240,9 @@ async function publishArticle(e) {
     const userData = checkUserLoggedIn();
     if (!userData) return;
     
+    // Dodajemo logging da vidimo šta sadrži userData
+    console.log('userData:', userData);
+    
     // Validacija forme
     if (!validateForm()) {
         showMessage('Molimo popunite sva obavezna polja.', 'error');
@@ -246,14 +262,35 @@ async function publishArticle(e) {
     formData.append('userId', userData.id);
     
     try {
+        // Ispišimo šta ćemo poslati
+        console.log('Šaljem zahtjev na:', '/api/articles');
+        console.log('userID:', userData.id);
+        console.log('Token (ako postoji):', userData.token);
+        
         // API poziv za objavljivanje artikla
         const response = await fetch('/api/articles', {
             method: 'POST',
+            headers: {
+                // Dodajemo Authorization header ako postoji token
+                ...(userData.token ? { 'Authorization': `Bearer ${userData.token}` } : {})
+            },
             body: formData
         });
         
+        // Logiramo status odgovora
+        console.log('Status odgovora:', response.status);
+        
         if (!response.ok) {
-            throw new Error('Greška prilikom objavljivanja artikla');
+            // Pokušavamo dobiti više detalja o grešci
+            let errorText;
+            try {
+                errorText = await response.text();
+                console.error('API error response:', errorText);
+            } catch (e) {
+                console.error('Nije moguće pročitati odgovor:', e);
+            }
+            
+            throw new Error(`Greška prilikom objavljivanja artikla: ${response.status}`);
         }
         
         // Ažuriranje UI-a
