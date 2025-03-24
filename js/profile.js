@@ -2,13 +2,20 @@
  * Vintage Thrift Store - Profile JavaScript
  * Za rad s API-jem umjesto lokalnih podataka
  */
+
+// Globalne varijable
+let userData = null;
+let userListings = [];
+let userFavorites = [];
+let userOrders = [];
+let activeTab = 'listings';
+
+// Provjera je li korisnik prijavljen
 function checkUserLoggedIn() {
-    // Dodati ovo:
     console.log("Pokretanje checkUserLoggedIn");
     
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
     
-    // Dodati ovo:
     console.log("userDataString iz localStorage:", userDataString);
     
     if (!userDataString) {
@@ -19,33 +26,8 @@ function checkUserLoggedIn() {
     
     try {
         const parsedUserData = JSON.parse(userDataString);
-        // Dodati ovo:
         console.log("Parsirani userData:", parsedUserData);
         return parsedUserData;
-    } catch (error) {
-        console.error('Greška prilikom parsiranja podataka korisnika:', error);
-        return null;
-    }
-}
-// Globalne varijable
-let userData = null;
-let userListings = [];
-let userFavorites = [];
-let userOrders = [];
-let activeTab = 'listings';
-
-// Provjera je li korisnik prijavljen
-function checkUserLoggedIn() {
-    const userDataString = localStorage.getItem('prijavljeniKorisnik');
-    
-    if (!userDataString) {
-        // Ako korisnik nije prijavljen, preusmjeri na register.html
-        window.location.href = 'register.html';
-        return null;
-    }
-    
-    try {
-        return JSON.parse(userDataString);
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
         return null;
@@ -54,9 +36,14 @@ function checkUserLoggedIn() {
 
 // Učitavanje podataka korisnika
 async function loadUserData() {
+    console.log("Pokretanje loadUserData, userData:", userData);
+    
     try {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
+        console.log("authToken iz localStorage:", token);
+        
+        console.log("Pokušavanje dohvaćanja podataka s URL-a:", `/api/users/${userData.id}`);
         
         const response = await fetch(`/api/users/${userData.id}`, {
             headers: {
@@ -64,28 +51,36 @@ async function loadUserData() {
             }
         });
         
+        console.log("API odgovor status:", response.status);
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja podataka korisnika');
         }
         
         const data = await response.json();
+        console.log("Dohvaćeni podaci korisnika:", data);
+        
         return data;
     } catch (error) {
-        console.error('Greška:', error);
+        console.error('Greška u loadUserData:', error);
         showMessage('Došlo je do greške prilikom učitavanja podataka korisnika.', 'error');
         return userData; // Vrati postojeće podatke ako dohvaćanje ne uspije
     }
 }
 
 // Učitavanje artikala korisnika
-// Učitavanje artikala korisnika
 async function loadUserListings() {
+    console.log("Pokretanje loadUserListings");
+    
     try {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
         // Osiguravamo da koristimo ID prijavljenog korisnika
         const currentUserId = userData.id;
+        console.log("currentUserId za dohvaćanje artikala:", currentUserId);
+        
+        console.log("Pokušavanje dohvaćanja artikala s URL-a:", `/api/articles/user/${currentUserId}`);
         
         const response = await fetch(`/api/articles/user/${currentUserId}`, {
             headers: {
@@ -93,14 +88,22 @@ async function loadUserListings() {
             }
         });
         
+        console.log("API odgovor status za artikle:", response.status);
+        
         if (!response.ok) {
             throw new Error('Greška prilikom dohvatanja artikala korisnika');
         }
         
         const data = await response.json();
-        return data;
+        console.log("Dohvaćeni artikli:", data);
+        
+        // Dodatno filtriranje na frontendu za svaki slučaj
+        const filteredData = data.filter(item => item.user_id === currentUserId);
+        console.log("Filtrirani artikli korisnika:", filteredData);
+        
+        return filteredData; // Vraća samo artikle trenutnog korisnika
     } catch (error) {
-        console.error('Greška:', error);
+        console.error('Greška u loadUserListings:', error);
         showMessage('Došlo je do greške prilikom učitavanja vaših artikala.', 'error');
         return [];
     }
@@ -182,7 +185,10 @@ function updateProfileInfo() {
     // Ažuriranje avatara korisnika
     const profileAvatar = document.getElementById('profileAvatar');
     if (profileAvatar) {
-        profileAvatar.src = userData.avatar_url || 'https://via.placeholder.com/100';
+        // Dodajte privremeno console.log
+        console.log("Avatar URL:", userData.avatar_url);
+        // Koristimo lokalnu sliku umjesto placeholder.com servisa
+        profileAvatar.src = userData.avatar_url || 'images/placeholder.jpg';
     }
     
     // Ažuriranje broja artikala
