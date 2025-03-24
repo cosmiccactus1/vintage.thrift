@@ -268,14 +268,13 @@ async function publishArticle(e) {
         console.log('Token (ako postoji):', userData.token);
         
         // API poziv za objavljivanje artikla
-        const response = await fetch('/api/articles', {
-            method: 'POST',
-            headers: {
-                // Dodajemo Authorization header ako postoji token
-                ...(userData.token ? { 'Authorization': `Bearer ${userData.token}` } : {})
-            },
-            body: formData
-        });
+const response = await fetch('/api/articles', {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${userData.token}`
+    },
+    body: formData
+});
         
         // Logiramo status odgovora
         console.log('Status odgovora:', response.status);
