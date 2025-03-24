@@ -1,10 +1,46 @@
 // Vercel serverless funkcija za upravljanje artiklima putem Supabase
 const { createClient } = require('@supabase/supabase-js');
+const busboy = require('busboy');
 
 // Konfiguracija Supabase klijenta
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper funkcija za parsiranje multipart forme
+function parseMultipartFormData(req) {
+  return new Promise((resolve, reject) => {
+    const bb = busboy({ headers: req.headers });
+    const formData = {};
+
+    bb.on('field', (name, val) => {
+      formData[name] = val;
+    });
+
+    bb.on('file', (name, file, info) => {
+      const chunks = [];
+      file.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+      file.on('end', () => {
+        formData[name] = {
+          filename: info.filename,
+          data: Buffer.concat(chunks)
+        };
+      });
+    });
+
+    bb.on('close', () => {
+      resolve(formData);
+    });
+
+    bb.on('error', (err) => {
+      reject(err);
+    });
+
+    req.pipe(bb);
+  });
+}
 
 // Helper funkcija za verifikaciju JWT tokena
 async function verifyToken(req) {
@@ -44,6 +80,13 @@ function parseURL(req) {
     return {
       type: 'user_articles',
       userId: urlParts[1]
+    };
+  }
+  
+  // Ako URL sadrži /draft, to je za draft artikle
+  if (urlParts.length >= 1 && urlParts[0] === 'draft') {
+    return {
+      type: 'draft'
     };
   }
   
@@ -168,7 +211,68 @@ module.exports = async (req, res) => {
       }
     }
     
-    // Za ostale operacije (POST, PUT, DELETE) zahtijeva se autentikacija
+    // POST metoda - kreiranje novog artikla
+    if (req.method === 'POST') {
+      // Za draft i aktivne artikle
+      if (parsedURL.type === 'all_articles' || parsedURL.type === 'draft') {
+        const userId = await verifyToken(req);
+        if (!userId) {
+          res.status(401).json({ message: 'Nije autorizovano' });
+          return;
+        }
+
+        // Parsiranje tijela zahtjeva (ako je multipart/form-data)
+        const formData = await parseMultipartFormData(req);
+        
+        const { 
+          title, 
+          description, 
+          price, 
+          category, 
+          status = 'active', 
+          userId: payloadUserId 
+        } = formData;
+
+        // Provjera podudaranja korisničkog ID-a
+        if (userId !== payloadUserId) {
+          res.status(403).json({ message: 'Nemate dozvolu za kreiranje artikla' });
+          return;
+        }
+
+        // Priprema slika (ako postoje)
+        const images = Object.keys(formData)
+          .filter(key => key.startsWith('image'))
+          .map(key => formData[key]);
+
+        // Kreiranje artikla u Supabase
+        const { data, error } = await supabase
+          .from('articles')
+          .insert({
+            title,
+            description,
+            price: parseFloat(price),
+            category,
+            status,
+            user_id: userId,
+            images: images || []
+          })
+          .select();
+
+        if (error) {
+          console.error('Greška pri kreiranju artikla:', error);
+          res.status(400).json({ 
+            message: 'Greška prilikom kreiranja artikla', 
+            error: error.message 
+          });
+          return;
+        }
+
+        res.status(201).json(data[0]);
+        return;
+      }
+    }
+    
+    // Za ostale operacije (PUT, DELETE) zahtijeva se autentikacija
     const userId = await verifyToken(req);
     if (!userId) {
       res.status(401).json({ message: 'Nije autorizovano' });
@@ -210,8 +314,6 @@ module.exports = async (req, res) => {
       res.status(200).json({ message: 'Artikal je uspješno obrisan' });
       return;
     }
-    
-    // POST, PUT i druge metode mogu biti implementirane po potrebi...
     
     // Ako nijedna ruta ne odgovara
     res.status(404).json({ message: 'Ruta nije pronađena' });
