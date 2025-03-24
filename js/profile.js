@@ -2,7 +2,31 @@
  * Vintage Thrift Store - Profile JavaScript
  * Za rad s API-jem umjesto lokalnih podataka
  */
-
+function checkUserLoggedIn() {
+    // Dodati ovo:
+    console.log("Pokretanje checkUserLoggedIn");
+    
+    const userDataString = localStorage.getItem('prijavljeniKorisnik');
+    
+    // Dodati ovo:
+    console.log("userDataString iz localStorage:", userDataString);
+    
+    if (!userDataString) {
+        // Ako korisnik nije prijavljen, preusmjeri na register.html
+        window.location.href = 'register.html';
+        return null;
+    }
+    
+    try {
+        const parsedUserData = JSON.parse(userDataString);
+        // Dodati ovo:
+        console.log("Parsirani userData:", parsedUserData);
+        return parsedUserData;
+    } catch (error) {
+        console.error('Greška prilikom parsiranja podataka korisnika:', error);
+        return null;
+    }
+}
 // Globalne varijable
 let userData = null;
 let userListings = [];
