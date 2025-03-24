@@ -43,6 +43,25 @@ async function fetchProduct(id) {
     }
 }
 
+// Dohvaćanje informacija o korisniku
+async function fetchUserInfo(userId) {
+    if (!userId) return null;
+    
+    try {
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) {
+            console.error(`Error fetching user info: ${response.status}`);
+            return null;
+        }
+        
+        const userData = await response.json();
+        return userData;
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        return null;
+    }
+}
+
 // Provjera statusa favorita za proizvod
 async function fetchFavoriteStatus(id) {
     try {
@@ -152,6 +171,11 @@ function renderProduct(product, isFavorite, isInCart) {
         formattedDate = `${dateCreated.getDate()}.${dateCreated.getMonth() + 1}.${dateCreated.getFullYear()}.`;
     }
     
+    // Provjera je li trenutni korisnik vlasnik artikla
+    const currentUserId = localStorage.getItem('userId');
+    const isCurrentUserSeller = currentUserId === product.user_id;
+    const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Korisnik');
+    
     // HTML za prodavača
     const sellerHtml = `
     <div class="seller-info">
@@ -162,8 +186,8 @@ function renderProduct(product, isFavorite, isInCart) {
             </div>
             <div class="seller-details">
                 <div class="seller-name">
-                    <a href="index.html?seller=${product.user_id}" class="seller-link">
-                        ${product.sellerName || 'Korisnik'}
+                    <a href="index.html?seller=${product.user_id}" class="seller-link" id="seller-name-link">
+                        ${sellerName}
                     </a>
                 </div>
                 <div class="seller-location">${product.location || 'Nije navedeno'}</div>
@@ -287,6 +311,18 @@ function renderProduct(product, isFavorite, isInCart) {
             } catch (e) {
                 console.error("Error toggling cart:", e);
                 alert("Ova funkcionalnost trenutno nije dostupna.");
+            }
+        });
+    }
+    
+    // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
+    if (product.user_id && !isCurrentUserSeller) {
+        fetchUserInfo(product.user_id).then(userData => {
+            if (userData) {
+                const sellerNameLink = document.getElementById('seller-name-link');
+                if (sellerNameLink) {
+                    sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
+                }
             }
         });
     }
