@@ -180,6 +180,8 @@ main {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
 }
 
 .product-card:hover {
@@ -190,137 +192,41 @@ main {
 .product-image-container {
     position: relative;
     overflow: hidden;
-    margin-bottom: 15px;
-    height: 320px; /* Fiksna visina za sve slike */
+    padding-top: 100%; /* 1:1 aspect ratio */
+    width: 100%;
 }
 
 .product-image {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center; /* Centrira sliku */
+    object-position: top; /* Fokus na vrh slike umjesto na centar */
     transition: transform 0.5s;
-    display: block;
 }
 
 .product-image:hover {
     transform: scale(1.03);
 }
 
-.product-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    transition: opacity 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.product-image-container:hover .product-overlay {
-    opacity: 1;
-}
-
 .product-actions {
-    display: flex;
-    gap: 15px;
     position: absolute;
-    bottom: 15px;
-    right: 15px;
-}
-
-.view-button, .favorite-button, .delete-button, .favorite-btn, .cart-btn {
-    background: white;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    bottom: 10px;
+    right: 10px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform 0.3s, background 0.3s;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.view-button:hover, .favorite-button:hover, .delete-button:hover, .favorite-btn:hover, .cart-btn:hover {
-    transform: translateY(-3px);
-}
-
-.view-button i, .favorite-button i, .delete-button i, .favorite-btn i, .cart-btn i {
-    color: #333;
-    font-size: 16px;
-}
-
-.favorite-button.active i, .favorite-btn.active i {
-    color: #e25454;
-}
-
-.cart-btn.active i {
-    color: #4CAF50;
-}
-
-.delete-button {
-    background-color: rgba(255, 76, 76, 0.8);
-}
-
-.delete-button i {
-    color: white;
-}
-
-.delete-button:hover {
-    background-color: rgba(255, 76, 76, 1);
+    gap: 8px;
+    z-index: 2;
 }
 
 .product-info {
-    text-align: center;
     padding: 15px;
-}
-
-.product-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 400;
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-.product-title a {
-    text-decoration: none;
-    color: #333;
-    transition: color 0.3s;
-}
-
-.product-title a:hover {
-    color: #857e78;
-}
-
-.product-category {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 300;
-    font-size: 13px;
-    color: #666;
-    letter-spacing: 0.5px;
-}
-
-.product-price {
-    font-weight: 400;
-    margin-top: 5px;
-    color: #e25454;
-}
-
-.product-meta {
+    background-color: white;
     display: flex;
-    justify-content: center;
-    gap: 15px;
-    font-size: 12px;
-    color: #777;
-    margin-top: 10px;
+    flex-direction: column;
+    flex-grow: 1;
 }
-
 /* Placeholder za slike koje ne postoje */
 .product-image-container .placeholder {
     display: flex;
