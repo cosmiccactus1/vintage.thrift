@@ -989,3 +989,246 @@ footer {
         justify-content: center;
     }
 }
+/* Stilizacija stranice proizvoda */
+.product-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    padding: 20px 0;
+    margin-top: 20px;
+}
+
+.product-gallery {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.product-main-image {
+    width: 100%;
+    height: 400px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-main-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.product-thumbnails {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.thumbnail.active {
+    border-color: #333;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    flex: 1;
+    min-width: 300px;
+    max-width: 600px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.product-actions .favorite-btn, 
+.product-actions .cart-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    transition: all 0.3s;
+    width: auto;
+    height: auto;
+}
+
+.product-actions .favorite-btn span, 
+.product-actions .cart-btn span {
+    margin-left: 8px;
+}
+
+.product-actions .favorite-btn:hover, 
+.product-actions .cart-btn:hover {
+    background: #eaeaea;
+}
+
+.product-actions .favorite-btn.active {
+    background: #ffe6e6;
+    color: #e25454;
+}
+
+.product-actions .cart-btn.active {
+    background: #e8f5e9;
+    color: #4caf50;
+}
+
+.product-metadata {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.metadata-item {
+    margin-bottom: 10px;
+    display: flex;
+}
+
+.metadata-label {
+    font-weight: bold;
+    width: 100px;
+    color: #666;
+}
+
+.metadata-value {
+    color: #333;
+}
+
+.product-description {
+    margin: 30px 0;
+}
+
+.product-description h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+.description-content {
+    line-height: 1.8;
+    color: #555;
+}
+
+.seller-info {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.seller-info h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+.seller-profile {
+    display: flex;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: 50px;
+    height: 50px;
+    background: #f1f1f1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 24px;
+    color: #aaa;
+}
+
+.seller-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.seller-location {
+    font-size: 13px;
+    color: #777;
+}
+
+.seller-link {
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.seller-link:hover {
+    color: #857e78;
+    text-decoration: underline;
+}
+
+.seller-products {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.seller-products-link {
+    color: #857e78;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.seller-products-link:hover {
+    text-decoration: underline;
+    color: #333;
+}
+
+.page-title {
+    text-align: center;
+    margin: 20px 0 30px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+}
+
+/* Bolja vidljivost gumba */
+.favorite-btn, .cart-btn {
+    background-color: white !important;
+    border: 1px solid #ddd !important;
+}
+
+.favorite-btn:hover, .cart-btn:hover {
+    background-color: #f5f5f5 !important;
+}
+
+.favorite-btn i, .cart-btn i {
+    font-size: 18px;
+}
+
+.favorite-btn.active i {
+    color: #e25454 !important;
+}
+
+.cart-btn.active i {
+    color: #4CAF50 !important;
+}
