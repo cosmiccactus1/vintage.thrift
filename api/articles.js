@@ -210,7 +210,54 @@ module.exports = async (req, res) => {
       res.status(200).json({ message: 'Artikal je uspješno obrisan' });
       return;
     }
+    // POST metoda - kreiranje novog artikla
+if (req.method === 'POST') {
+  console.log('Primljen POST zahtjev:', req.body);
+  
+  try {
+    // Validacija podataka
+    const { title, description, price, category, status, images } = req.body;
     
+    if (!title || !description || !price) {
+      res.status(400).json({ message: 'Nedostaju obavezna polja' });
+      return;
+    }
+    
+    // Kreiranje novog artikla
+    const { data: article, error } = await supabase
+      .from('articles')
+      .insert([{
+        title,
+        description,
+        price,
+        category,
+        images: images || [],
+        user_id: userId, // ID autentificiranog korisnika
+        status: status || 'active',
+        created_at: new Date().toISOString()
+      }])
+      .select();
+    
+    if (error) {
+      console.error('Supabase greška:', error);
+      throw error;
+    }
+    
+    console.log('Kreiran artikal:', article);
+    
+    // Transformacija ID-a za kompatibilnost ako je potrebno
+    const formattedArticle = article.length > 0 ? {
+      ...article[0],
+      _id: article[0].id
+    } : null;
+    
+    res.status(201).json(formattedArticle || article);
+    return;
+  } catch (error) {
+    console.error('Greška prilikom kreiranja artikla:', error);
+    throw error;
+  }
+}
     // POST, PUT i druge metode mogu biti implementirane po potrebi...
     
     // Ako nijedna ruta ne odgovara
