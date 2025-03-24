@@ -166,7 +166,7 @@ main {
     padding: 0 20px;
 }
 
-/* Proizvodi */
+/* Proizvodi - finalni stilovi */
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -175,13 +175,13 @@ main {
 
 .product-card {
     position: relative;
-    overflow: hidden;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s, box-shadow 0.3s;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .product-card:hover {
@@ -191,24 +191,19 @@ main {
 
 .product-image-container {
     position: relative;
+    height: 300px; /* Fiksna visina */
     overflow: hidden;
-    padding-top: 100%; /* 1:1 aspect ratio */
-    width: 100%;
+    border-radius: 8px 8px 0 0;
 }
 
 .product-image {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: top; /* Fokus na vrh slike umjesto na centar */
-    transition: transform 0.5s;
-}
-
-.product-image:hover {
-    transform: scale(1.03);
+    object-fit: cover; /* Pokrij cijeli kontejner */
+    object-position: center center; /* Centrirana slika */
+    transition: transform 0.3s;
+    display: block;
+    background-color: #f8f8f8; /* Lagana pozadina */
 }
 
 .product-actions {
@@ -217,16 +212,87 @@ main {
     right: 10px;
     display: flex;
     gap: 8px;
-    z-index: 2;
+    z-index: 5;
+}
+
+.view-button, .favorite-button, .delete-button, .favorite-btn, .cart-btn {
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s, background 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.view-button:hover, .favorite-button:hover, .delete-button:hover, .favorite-btn:hover, .cart-btn:hover {
+    transform: translateY(-3px);
+}
+
+.view-button i, .favorite-button i, .delete-button i, .favorite-btn i, .cart-btn i {
+    color: #333;
+    font-size: 16px;
+}
+
+.favorite-button.active i, .favorite-btn.active i {
+    color: #e25454;
+}
+
+.cart-btn.active i {
+    color: #4CAF50;
 }
 
 .product-info {
     padding: 15px;
-    background-color: white;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
 }
+
+.product-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.product-title a {
+    text-decoration: none;
+    color: #333;
+    transition: color 0.3s;
+}
+
+.product-title a:hover {
+    color: #857e78;
+}
+
+.product-category {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    font-size: 13px;
+    color: #666;
+    letter-spacing: 0.5px;
+}
+
+.product-price {
+    font-weight: 400;
+    margin-top: 5px;
+    color: #e25454;
+}
+
+.product-meta {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    font-size: 12px;
+    color: #777;
+    margin-top: 10px;
+}
+
 /* Placeholder za slike koje ne postoje */
 .product-image-container .placeholder {
     display: flex;
@@ -248,82 +314,6 @@ img[src="[object Object]"] + .placeholder,
 img[src="null"] + .placeholder,
 img[src="undefined"] + .placeholder {
     display: flex !important;
-}
-
-/* Stranica proizvoda */
-.back-navigation {
-    margin-bottom: 40px;
-}
-
-.back-link {
-    text-decoration: none;
-    color: #666;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: color 0.3s;
-}
-
-.back-link:hover {
-    color: #333;
-}
-
-.product-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 50px;
-}
-
-.product-detail-image {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-.product-detail-info {
-    padding: 20px 0;
-}
-
-.product-detail-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 400;
-    margin-bottom: 10px;
-}
-
-.product-detail-category, .product-detail-season {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 5px;
-    font-weight: 300;
-}
-
-.product-detail-divider {
-    width: 40px;
-    height: 1px;
-    background-color: #ddd;
-    margin: 20px 0;
-}
-
-.product-detail-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 24px;
-    margin: 20px 0;
-}
-
-.product-detail-size {
-    margin: 20px 0;
-    font-size: 14px;
-}
-
-.product-detail-description {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    line-height: 1.8;
-    margin-bottom: 30px;
-    color: #555;
 }
 
 /* Favoriti i korpa */
