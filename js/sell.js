@@ -196,14 +196,25 @@ async function saveAsDraft() {
     formData.append('userId', userData.id);
     
     try {
+        // Dohvatanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            throw new Error('Niste prijavljeni. Molimo prijavite se prije spremanja nacrta.');
+        }
+        
         // API poziv za spremanje nacrta
         const response = await fetch('/api/articles/draft', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
             body: formData
         });
         
         if (!response.ok) {
-            throw new Error('Greška prilikom spremanja nacrta');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Greška prilikom spremanja nacrta');
         }
         
         // Ažuriranje UI-a
@@ -216,7 +227,7 @@ async function saveAsDraft() {
         
     } catch (error) {
         console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom spremanja nacrta.', 'error');
+        showMessage(error.message || 'Došlo je do greške prilikom spremanja nacrta.', 'error');
     }
 }
 
@@ -246,14 +257,25 @@ async function publishArticle(e) {
     formData.append('userId', userData.id);
     
     try {
+        // Dohvatanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            throw new Error('Niste prijavljeni. Molimo prijavite se prije objavljivanja artikla.');
+        }
+        
         // API poziv za objavljivanje artikla
         const response = await fetch('/api/articles', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
             body: formData
         });
         
         if (!response.ok) {
-            throw new Error('Greška prilikom objavljivanja artikla');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Greška prilikom objavljivanja artikla');
         }
         
         // Ažuriranje UI-a
@@ -266,7 +288,7 @@ async function publishArticle(e) {
         
     } catch (error) {
         console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom objavljivanja artikla.', 'error');
+        showMessage(error.message || 'Došlo je do greške prilikom objavljivanja artikla.', 'error');
     }
 }
 
