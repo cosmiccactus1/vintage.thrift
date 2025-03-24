@@ -574,7 +574,6 @@ function initializeTabs() {
     });
 }
 
-// Inicijalizacija odjave
 function initializeLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     
@@ -583,6 +582,7 @@ function initializeLogout() {
             if (confirm('Jeste li sigurni da se želite odjaviti?')) {
                 localStorage.removeItem('prijavljeniKorisnik');
                 localStorage.removeItem('authToken');
+                localStorage.removeItem('userId');
                 window.location.href = 'index.html';
             }
         });
