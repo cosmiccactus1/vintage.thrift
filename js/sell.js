@@ -2,41 +2,13 @@
  * Vintage Thrift Store - Sell JavaScript
  * Za rad s API-jem umjesto lokalnih podataka
  */
-// Debugging funkcija
-function debugToken() {
-  const userData = localStorage.getItem('prijavljeniKorisnik');
-  if (userData) {
-    try {
-      const parsed = JSON.parse(userData);
-      console.log('User data:', parsed);
-      console.log('Token type:', typeof parsed.token);
-      console.log('Token:', parsed.token);
-      
-      // Provjeri i za druge moguće lokacije tokena
-      if (parsed.session) console.log('Session:', parsed.session);
-      if (parsed.user) console.log('User:', parsed.user);
-      
-      document.body.innerHTML += '<div style="background:black; color:white; padding:20px;">TOKEN DEBUG: ' + 
-        (parsed.token || 'Token nije pronađen') + '</div>';
-    } catch (e) {
-      console.error('Greška:', e);
-    }
-  } else {
-    console.log('Nema podataka u localStorage');
-  }
-}
 
-// Pokreni debugiranje kad se učita stranica
-document.addEventListener('DOMContentLoaded', debugToken);
 // Globalne varijable
 let uploadedImages = [];
 
 // Provjera je li korisnik prijavljen
 function checkUserLoggedIn() {
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
-    
-    // Dodano - Provjera sadržaja localStorage
-    console.log('Podaci iz localStorage:', userDataString);
     
     if (!userDataString) {
         // Ako korisnik nije prijavljen, preusmjeri na register.html
@@ -45,46 +17,7 @@ function checkUserLoggedIn() {
     }
     
     try {
-        const userData = JSON.parse(userDataString);
-        // Dodano - Provjera parsiranog objekta
-        console.log('Parsirani podaci korisnika:', userData);
-        
-        // DODATNA PROVJERA I PRILAGODBA TOKENA
-        let token = userData.token;
-        console.log('Originalni token:', token);
-        console.log('Tip tokena:', typeof token);
-        
-        // Ako token nije string nego objekt ili je ugniježđen u drugoj strukturi
-        if (typeof token === 'object' && token !== null) {
-            console.log('Token je objekt, pokušavam pronaći token string unutar njega');
-            // Ako je token objekt, pokušaj pronaći access_token ili sličan ključ
-            token = token.access_token || token.accessToken || token.jwt || JSON.stringify(token);
-        }
-        
-        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
-        if (!token && userData.session && userData.session.access_token) {
-            console.log('Token pronađen u session objektu');
-            token = userData.session.access_token;
-        }
-        
-        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
-        if (!token && userData.user && userData.user.token) {
-            console.log('Token pronađen u user.token');
-            token = userData.user.token;
-        }
-        
-        // Ako token ne postoji ili je prazan, pokušaj pronaći na drugim mjestima
-        if (!token && userData.accessToken) {
-            console.log('Token pronađen u accessToken');
-            token = userData.accessToken;
-        }
-        
-        console.log('Konačni token koji će biti korišten:', token);
-        
-        return {
-            ...userData,
-            token: token // Koristi prilagođeni token
-        };
+        return JSON.parse(userDataString);
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
         return null;
@@ -251,28 +184,22 @@ async function saveAsDraft() {
     if (!userData) return;
     
     // Dohvaćanje vrijednosti forme
-    const form = document.getElementById('prodaj-form');
-    const formData = new FormData(form);
+    const formData = new FormData(document.getElementById('prodaj-form'));
     
-    // Pretvaramo FormData u običan objekt za JSON
-    const articleData = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        price: parseFloat(formData.get('price')),
-        category: formData.get('category'),
-        status: 'draft',
-        images: []
-    };
+    // Dodavanje slika u formData
+    uploadedImages.forEach((image, index) => {
+        formData.append(`image${index}`, image);
+    });
+    
+    // Dodavanje statusa i korisničkog ID-a
+    formData.append('status', 'draft');
+    formData.append('userId', userData.id);
     
     try {
         // API poziv za spremanje nacrta
-        const response = await fetch('/api/articles', {
+        const response = await fetch('/api/articles/draft', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userData.token}`
-            },
-            body: JSON.stringify(articleData)
+            body: formData
         });
         
         if (!response.ok) {
@@ -297,31 +224,8 @@ async function saveAsDraft() {
 async function publishArticle(e) {
     e.preventDefault();
     
-    // DEBUGGING - Raw localStorage data
-    console.log('Raw localStorage data:', localStorage.getItem('prijavljeniKorisnik'));
-    try {
-        const testData = JSON.parse(localStorage.getItem('prijavljeniKorisnik'));
-        console.log('Complete parsed localStorage structure:', testData);
-        console.log('Keys in userData:', Object.keys(testData));
-        
-        // Pokušaj pronalaska tokena u različitim mjestima u strukturi
-        if (testData.token) console.log('token property exists:', testData.token);
-        if (testData.accessToken) console.log('accessToken property exists:', testData.accessToken);
-        if (testData.session && testData.session.access_token) {
-            console.log('session.access_token exists:', testData.session.access_token);
-        }
-        if (testData.user && testData.user.token) {
-            console.log('user.token exists:', testData.user.token);
-        }
-    } catch (e) {
-        console.error('Error analyzing localStorage:', e);
-    }
-    
     const userData = checkUserLoggedIn();
-    if (!userData) {
-        console.error('Korisnik nije prijavljen ili nema validan token');
-        return;
-    }
+    if (!userData) return;
     
     // Validacija forme
     if (!validateForm()) {
@@ -330,70 +234,26 @@ async function publishArticle(e) {
     }
     
     // Dohvaćanje vrijednosti forme
-    const form = document.getElementById('prodaj-form');
-    const formData = new FormData(form);
+    const formData = new FormData(document.getElementById('prodaj-form'));
     
-    // Pretvaramo FormData u običan objekt za JSON
-    const articleData = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        price: parseFloat(formData.get('price')),
-        category: formData.get('category'),
-        status: 'active',
-        images: []
-    };
+    // Dodavanje slika u formData
+    uploadedImages.forEach((image, index) => {
+        formData.append(`image${index}`, image);
+    });
+    
+    // Dodavanje statusa i korisničkog ID-a
+    formData.append('status', 'active');
+    formData.append('userId', userData.id);
     
     try {
-        // Ispišimo šta ćemo poslati
-        console.log('Šaljem zahtjev na:', '/api/articles');
-        console.log('userID:', userData.id);
-        console.log('Token za slanje:', userData.token);
-        console.log('Podaci za slanje:', articleData);
-        
-        // Kreiranje točnog Authorization headera
-        const authHeader = `Bearer ${userData.token}`;
-        console.log('Exact Authorization header:', authHeader);
-        
-        // Pretvaranje u JSON
-        const jsonData = JSON.stringify(articleData);
-        console.log('JSON string being sent:', jsonData);
-        
-        // Kreiranje opcija za fetch
-        const fetchOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authHeader
-            },
-            body: jsonData
-        };
-        console.log('Complete fetch options:', fetchOptions);
-        
         // API poziv za objavljivanje artikla
-        const response = await fetch('/api/articles', fetchOptions);
-        
-        // Logiramo status odgovora
-        console.log('Status odgovora:', response.status);
-        console.log('Status text:', response.statusText);
+        const response = await fetch('/api/articles', {
+            method: 'POST',
+            body: formData
+        });
         
         if (!response.ok) {
-            // Pokušavamo dobiti više detalja o grešci
-            let errorText;
-            try {
-                errorText = await response.text();
-                console.error('API error response text:', errorText);
-                
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    console.error('API error response JSON:', errorJson);
-                } catch (e) {
-                    console.log('Error response is not JSON');
-                }
-            } catch (e) {
-                console.error('Nije moguće pročitati odgovor:', e);
-            }
-            
-            throw new Error(`Greška prilikom objavljivanja artikla: ${response.status}`);
+            throw new Error('Greška prilikom objavljivanja artikla');
         }
         
         // Ažuriranje UI-a
@@ -487,4 +347,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeneri za uklanjanje klase error prilikom unosa
     const formFields = document.querySelectorAll('input, select, textarea');
     formFields.forEach(field => {
-        field.addEventListener('inp
+        field.addEventListener('input', function() {
+            this.classList.remove('error');
+            
+            // Uklanjanje eventualne poruke o grešci
+            const errorMessage = this.parentNode.querySelector('.error-message');
+            if (errorMessage) {
+                errorMessage.remove();
+            }
+        });
+    });
+});
