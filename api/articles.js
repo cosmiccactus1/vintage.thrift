@@ -9,30 +9,21 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Helper funkcija za verifikaciju JWT tokena
 async function verifyToken(req) {
   try {
-    console.log('Headers received:', JSON.stringify(req.headers));
     const authHeader = req.headers.authorization;
-    console.log('Authorization header:', authHeader);
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('Missing or invalid Authorization header');
       return null;
     }
     
     const token = authHeader.split(' ')[1];
-    console.log('Extracted token:', token);
     
     // Verifikacija tokena putem Supabase Auth API
-    console.log('Attempting to verify token with Supabase...');
-    const { data, error } = await supabase.auth.getUser(token);
-    console.log('Supabase auth response:', JSON.stringify(data), JSON.stringify(error));
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    if (error || !data.user) {
-      console.log('Token verification failed:', error);
+    if (error || !user) {
       return null;
     }
     
-    console.log('Token verification successful, user ID:', data.user.id);
-    return data.user.id;
+    return user.id;
   } catch (error) {
     console.error('Greška prilikom verifikacije tokena:', error);
     return null;
@@ -99,13 +90,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('Received request to /api/articles');
-    console.log('Request method:', req.method);
-    console.log('Request body:', JSON.stringify(req.body));
-    
     // Parsiranje URL-a za određivanje rute
     const parsedURL = parseURL(req);
-    console.log('Parsed URL:', parsedURL);
     
     // GET metoda - dohvaćanje artikala
     if (req.method === 'GET') {
@@ -183,12 +169,8 @@ module.exports = async (req, res) => {
     }
     
     // Za ostale operacije (POST, PUT, DELETE) zahtijeva se autentikacija
-    console.log('Attempting to verify token...');
     const userId = await verifyToken(req);
-    console.log('Verification result (userId):', userId);
-    
     if (!userId) {
-      console.log('Unauthorized - No valid user ID found');
       res.status(401).json({ message: 'Nije autorizovano' });
       return;
     }
@@ -231,20 +213,16 @@ module.exports = async (req, res) => {
     
     // POST metoda - kreiranje novog artikla
     if (req.method === 'POST') {
-      console.log('Processing POST request to create article');
-      console.log('User ID after verification:', userId);
-      console.log('Request body for article creation:', JSON.stringify(req.body));
+      console.log('Primljen POST zahtjev:', req.body);
       
       // Validacija podataka
       const { title, description, price, category, status, images } = req.body || {};
       
       if (!title || !description || !price) {
-        console.log('Missing required fields');
         res.status(400).json({ message: 'Nedostaju obavezna polja' });
         return;
       }
       
-      console.log('Creating article in Supabase');
       // Kreiranje novog artikla
       const { data: article, error } = await supabase
         .from('articles')
@@ -261,12 +239,12 @@ module.exports = async (req, res) => {
         .select();
       
       if (error) {
-        console.error('Supabase error during article creation:', error);
+        console.error('Supabase greška:', error);
         res.status(500).json({ message: 'Greška prilikom kreiranja artikla', error: error.message });
         return;
       }
       
-      console.log('Article created successfully:', JSON.stringify(article));
+      console.log('Kreiran artikal:', article);
       
       // Transformacija ID-a za kompatibilnost ako je potrebno
       const formattedArticle = article.length > 0 ? {
@@ -279,11 +257,10 @@ module.exports = async (req, res) => {
     }
     
     // Ako nijedna ruta ne odgovara
-    console.log('No matching route found');
     res.status(404).json({ message: 'Ruta nije pronađena' });
     
   } catch (error) {
-    console.error('Error in API handler:', error);
+    console.error('Error:', error);
     res.status(500).json({ message: 'Interna serverska greška', error: error.message });
   }
 };
