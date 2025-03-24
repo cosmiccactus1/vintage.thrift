@@ -9,15 +9,17 @@ let uploadedImages = [];
 // Provjera je li korisnik prijavljen
 function checkUserLoggedIn() {
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
+    const userId = localStorage.getItem('userId');
     
-    if (!userDataString) {
+    if (!userDataString || !userId) {
         // Ako korisnik nije prijavljen, preusmjeri na register.html
         window.location.href = 'register.html';
         return null;
     }
     
     try {
-        return JSON.parse(userDataString);
+        const userData = JSON.parse(userDataString);
+        return { ...userData, id: userId };
     } catch (error) {
         console.error('Greška prilikom parsiranja podataka korisnika:', error);
         return null;
