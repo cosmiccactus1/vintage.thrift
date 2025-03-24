@@ -176,10 +176,10 @@ function renderProduct(product, isFavorite, isInCart) {
     const isCurrentUserSeller = currentUserId === product.user_id;
     const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Korisnik');
     
-    // HTML za prodavača
+    // HTML za korisnika
     const sellerHtml = `
     <div class="seller-info">
-        <h2>Prodavač</h2>
+        <h2>Korisnik</h2>
         <div class="seller-profile">
             <div class="seller-avatar">
                 <i class="fas fa-user-circle"></i>
@@ -193,7 +193,7 @@ function renderProduct(product, isFavorite, isInCart) {
                 <div class="seller-location">${product.location || 'Nije navedeno'}</div>
                 <div class="seller-products">
                     <a href="index.html?seller=${product.user_id}" class="seller-products-link">
-                        Pogledajte sve artikle ovog prodavača
+                        Pogledajte sve artikle ovog korisnika
                     </a>
                 </div>
             </div>
