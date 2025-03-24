@@ -122,8 +122,54 @@
         <p>Vintage Thrift Store &copy; 2025</p>
     </footer>
 
-    <script src="js/auth.js"></script>
     <script>
+        // Funkcije za autentikaciju
+        async function loginUser(email, password) {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Greška prilikom prijave');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Greška prilikom prijave:', error);
+                throw error;
+            }
+        }
+        
+        async function registerUser(userData) {
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Greška prilikom registracije');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Greška prilikom registracije:', error);
+                throw error;
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Hamburger menu funkcionalnost
             const hamburgerIcon = document.getElementById('hamburgerIcon');
@@ -174,9 +220,14 @@
                     const password = document.getElementById('login-password').value;
                     
                     try {
-                        const user = await loginUser(email, password);
-                        console.log('Prijava uspješna:', user);
-                        window.location.href = 'profile.html';
+                        const data = await loginUser(email, password);
+                        console.log('Prijava uspješna:', data);
+                        
+                        // DODANO: Spremi token i ID korisnika
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('userId', data.user.id || data.user._id);
+                        
+                        window.location.href = 'index.html';
                     } catch (error) {
                         console.error('Greška prilikom prijave:', error);
                         alert(error.message || 'Greška prilikom prijave');
@@ -200,13 +251,18 @@
                     
                     try {
                         console.log('Pokušaj registracije sa:', { username, email });
-                        const user = await registerUser({
+                        const data = await registerUser({
                             username,
                             email,
                             password
                         });
-                        console.log('Registracija uspješna:', user);
-                        window.location.href = 'profile.html';
+                        console.log('Registracija uspješna:', data);
+                        
+                        // DODANO: Spremi token i ID korisnika
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('userId', data.user.id || data.user._id);
+                        
+                        window.location.href = 'index.html';
                     } catch (error) {
                         console.error('Greška prilikom registracije:', error);
                         alert(error.message || 'Greška prilikom registracije');
