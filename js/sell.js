@@ -2,7 +2,32 @@
  * Vintage Thrift Store - Sell JavaScript
  * Za rad s API-jem umjesto lokalnih podataka
  */
+// Debugging funkcija
+function debugToken() {
+  const userData = localStorage.getItem('prijavljeniKorisnik');
+  if (userData) {
+    try {
+      const parsed = JSON.parse(userData);
+      console.log('User data:', parsed);
+      console.log('Token type:', typeof parsed.token);
+      console.log('Token:', parsed.token);
+      
+      // Provjeri i za druge moguće lokacije tokena
+      if (parsed.session) console.log('Session:', parsed.session);
+      if (parsed.user) console.log('User:', parsed.user);
+      
+      document.body.innerHTML += '<div style="background:black; color:white; padding:20px;">TOKEN DEBUG: ' + 
+        (parsed.token || 'Token nije pronađen') + '</div>';
+    } catch (e) {
+      console.error('Greška:', e);
+    }
+  } else {
+    console.log('Nema podataka u localStorage');
+  }
+}
 
+// Pokreni debugiranje kad se učita stranica
+document.addEventListener('DOMContentLoaded', debugToken);
 // Globalne varijable
 let uploadedImages = [];
 
