@@ -176,18 +176,29 @@ main {
 .product-card {
     position: relative;
     overflow: hidden;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
 
 .product-image-container {
     position: relative;
     overflow: hidden;
     margin-bottom: 15px;
+    height: 320px; /* Fiksna visina za sve slike */
 }
 
 .product-image {
     width: 100%;
-    height: 400px;
+    height: 100%;
     object-fit: cover;
+    object-position: center; /* Centrira sliku */
     transition: transform 0.5s;
     display: block;
 }
@@ -217,9 +228,12 @@ main {
 .product-actions {
     display: flex;
     gap: 15px;
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
 }
 
-.view-button, .favorite-button, .delete-button {
+.view-button, .favorite-button, .delete-button, .favorite-btn, .cart-btn {
     background: white;
     border: none;
     width: 40px;
@@ -230,19 +244,24 @@ main {
     justify-content: center;
     cursor: pointer;
     transition: transform 0.3s, background 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.view-button:hover, .favorite-button:hover, .delete-button:hover {
+.view-button:hover, .favorite-button:hover, .delete-button:hover, .favorite-btn:hover, .cart-btn:hover {
     transform: translateY(-3px);
 }
 
-.view-button i, .favorite-button i, .delete-button i {
+.view-button i, .favorite-button i, .delete-button i, .favorite-btn i, .cart-btn i {
     color: #333;
     font-size: 16px;
 }
 
-.favorite-button.active i {
+.favorite-button.active i, .favorite-btn.active i {
     color: #e25454;
+}
+
+.cart-btn.active i {
+    color: #4CAF50;
 }
 
 .delete-button {
@@ -259,6 +278,7 @@ main {
 
 .product-info {
     text-align: center;
+    padding: 15px;
 }
 
 .product-title {
@@ -266,6 +286,16 @@ main {
     font-weight: 400;
     font-size: 18px;
     margin-bottom: 5px;
+}
+
+.product-title a {
+    text-decoration: none;
+    color: #333;
+    transition: color 0.3s;
+}
+
+.product-title a:hover {
+    color: #857e78;
 }
 
 .product-category {
@@ -279,6 +309,39 @@ main {
 .product-price {
     font-weight: 400;
     margin-top: 5px;
+    color: #e25454;
+}
+
+.product-meta {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    font-size: 12px;
+    color: #777;
+    margin-top: 10px;
+}
+
+/* Placeholder za slike koje ne postoje */
+.product-image-container .placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+    color: #aaa;
+    font-size: 3rem;
+}
+
+/* Fix za nevalidne URL-ove slika */
+img[src="[object Object]"], img[src="null"], img[src="undefined"] {
+    display: none;
+}
+
+img[src="[object Object]"] + .placeholder,
+img[src="null"] + .placeholder,
+img[src="undefined"] + .placeholder {
+    display: flex !important;
 }
 
 /* Stranica proizvoda */
@@ -820,6 +883,100 @@ footer {
 .sell-button:hover {
     background-color: #222 !important;
     color: white !important;
+}
+
+/* Stilovi za prikaz statusa artikla */
+.product-status {
+    margin-top: 8px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.status-badge.draft {
+    background-color: #f5f5f5;
+    color: #757575;
+}
+
+/* Stilovi za editovanje artikla */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.secondary-button {
+    padding: 12px 24px;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #666;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.secondary-button:hover {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+/* Poboljšanja za prikaz greški */
+.error-message {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #e74c3c;
+}
+
+/* Stilovi za poruke */
+#message-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.message {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    transition: opacity 0.5s, transform 0.5s;
+}
+
+.message.success {
+    border-left: 4px solid #4CAF50;
+}
+
+.message.error {
+    border-left: 4px solid #e74c3c;
+}
+
+.message.info {
+    border-left: 4px solid #3498db;
+}
+
+.message.hide {
+    opacity: 0;
+    transform: translateX(100px);
 }
 
 /* Responsive */
