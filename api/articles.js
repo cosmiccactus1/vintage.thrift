@@ -250,6 +250,55 @@ module.exports = async (req, res) => {
           .filter(key => key.startsWith('image'))
           .map(key => formData[key]);
 
+        // Array koji će sadržavati URL-ove slika
+        let imageUrls = [];
+
+        // Upload slika u Supabase Storage
+        if (images && images.length > 0) {
+          try {
+            for (const image of images) {
+              if (!image || !image.data) {
+                console.log('Invalid image data', image);
+                continue;
+              }
+
+              // Generiraj jedinstveno ime datoteke
+              const fileName = `${userId}/${Date.now()}-${image.filename}`;
+              
+              console.log(`Uploading image: ${fileName}`);
+              
+              // Upload datoteke u bucket
+              const { data: storageData, error: storageError } = await supabase
+                .storage
+                .from('article-images')
+                .upload(fileName, image.data, {
+                  contentType: 'image/*',
+                  upsert: true
+                });
+                
+              if (storageError) {
+                console.error('Error uploading image:', storageError);
+                continue;
+              }
+              
+              console.log('Upload successful:', fileName);
+              
+              // Dohvati javni URL slike
+              const { data: publicUrlData } = supabase
+                .storage
+                .from('article-images')
+                .getPublicUrl(fileName);
+                
+              imageUrls.push(publicUrlData.publicUrl);
+              console.log('Added public URL:', publicUrlData.publicUrl);
+            }
+          } catch (error) {
+            console.error('Error in image upload process:', error);
+          }
+        }
+
+        console.log('Final image URLs:', imageUrls);
+
         // Kreiranje artikla u Supabase
         const { data, error } = await supabase
           .from('articles')
@@ -266,7 +315,7 @@ module.exports = async (req, res) => {
             location,
             status,
             user_id: userId,
-            images: images || []
+            images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null // Spremamo kao JSON string
           })
           .select();
 
@@ -296,7 +345,7 @@ module.exports = async (req, res) => {
       // Provjera da li korisnik može izbrisati artikal
       const { data: article, error: fetchError } = await supabase
         .from('articles')
-        .select('user_id')
+        .select('user_id, images')
         .eq('id', parsedURL.articleId)
         .single();
         
@@ -313,6 +362,32 @@ module.exports = async (req, res) => {
       if (article.user_id !== userId) {
         res.status(403).json({ message: 'Nemate dozvolu za brisanje ovog artikla' });
         return;
+      }
+      
+      // Brisanje slika iz storage-a
+      if (article.images) {
+        try {
+          const imageUrls = JSON.parse(article.images);
+          
+          for (const url of imageUrls) {
+            // Izdvajanje imena datoteke iz URL-a
+            const urlParts = url.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            const path = `${userId}/${fileName}`;
+            
+            // Brisanje datoteke
+            const { error: deleteStorageError } = await supabase
+              .storage
+              .from('article-images')
+              .remove([path]);
+              
+            if (deleteStorageError) {
+              console.error('Error deleting image from storage:', deleteStorageError);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing images for deletion:', error);
+        }
       }
       
       // Brisanje artikla
