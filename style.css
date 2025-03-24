@@ -191,7 +191,7 @@ main {
 
 .product-image-container {
     position: relative;
-    height: 300px; /* Fiksna visina */
+    height: 220px; /* Smanjena visina sa 300px na 220px */
     overflow: hidden;
     border-radius: 8px 8px 0 0;
 }
@@ -199,11 +199,11 @@ main {
 .product-image {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Pokrij cijeli kontejner */
-    object-position: center center; /* Centrirana slika */
+    object-fit: cover; /* Prilagođavanje slike prostoru */
+    object-position: center center; /* Centriranje slike */
     transition: transform 0.3s;
     display: block;
-    background-color: #f8f8f8; /* Lagana pozadina */
+    background-color: #f8f8f8; /* Lagana pozadina za bolje isticanje */
 }
 
 .product-actions {
@@ -218,8 +218,8 @@ main {
 .view-button, .favorite-button, .delete-button, .favorite-btn, .cart-btn {
     background: white;
     border: none;
-    width: 40px;
-    height: 40px;
+    width: 36px; /* Smanjeno sa 40px */
+    height: 36px; /* Smanjeno sa 40px */
     border-radius: 50%;
     display: flex;
     align-items: center;
