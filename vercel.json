@@ -8,8 +8,12 @@
     { "src": "api/*.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/auth/(.*)", "dest": "/api/auth.js" },
-    { "src": "/api/(.*)", "dest": "/api/$1.js" },
+    { "src": "/api/auth", "dest": "/api/auth.js" },
+    { "src": "/api/users", "dest": "/api/users.js" },
+    { "src": "/api/articles", "dest": "/api/articles.js" },
+    { "src": "/api/favorites", "dest": "/api/favorites.js" },
+    { "src": "/api/orders", "dest": "/api/orders.js" },
+    { "src": "/api/cart", "dest": "/api/cart.js" },
     { "src": "/", "dest": "/index.html" },
     { "src": "/favicon.ico", "dest": "/images/favicon.ico" },
     { "handle": "filesystem" },
