@@ -10,7 +10,6 @@
   "routes": [
     { "src": "/api/users/([^/]+)", "dest": "/api/users.js" },
     { "src": "/api/articles/user/([^/]+)", "dest": "/api/articles.js" },
-    { "src": "/api/articles", "dest": "/api/articles.js" },
     { "src": "/api/auth/(.*)", "dest": "/api/auth.js" },
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
     { "src": "/", "dest": "/index.html" },
