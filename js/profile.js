@@ -59,7 +59,7 @@ async function loadUserListings() {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/articles?user_id=${userData.id}`, {
+        const response = await fetch(`/api/articles/user/${userData.id}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
