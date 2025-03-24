@@ -1,7 +1,8 @@
 /**
  * Vintage Thrift Store - Profile JavaScript
- * Za rad s API-jem umjesto lokalnih podataka
+ * Za rad s Supabase-om umjesto lokalnih podataka
  */
+import supabase from './supabase.js';
 
 // Globalne varijable
 let userData = null;
@@ -11,66 +12,65 @@ let userOrders = [];
 let activeTab = 'listings';
 
 // Provjera je li korisnik prijavljen
-function checkUserLoggedIn() {
-    const userDataString = localStorage.getItem('prijavljeniKorisnik');
+async function checkUserLoggedIn() {
+    // Dohvati trenutnog korisnika iz Supabase auth
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!userDataString) {
+    if (!user) {
         // Ako korisnik nije prijavljen, preusmjeri na register.html
         window.location.href = 'register.html';
         return null;
     }
     
-    try {
-        return JSON.parse(userDataString);
-    } catch (error) {
-        console.error('Greška prilikom parsiranja podataka korisnika:', error);
+    // Dohvati dodatne podatke o korisniku iz baze
+    const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+    
+    if (error) {
+        console.error('Greška prilikom dohvaćanja podataka korisnika:', error);
         return null;
     }
+    
+    return userData;
 }
 
 // Učitavanje podataka korisnika
 async function loadUserData() {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/users?id=${userData.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja podataka korisnika');
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userData.id)
+            .single();
+            
+        if (error) {
+            throw error;
         }
         
-        const data = await response.json();
-        return data;
+        return data || userData;
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom učitavanja podataka korisnika.', 'error');
-        return userData; // Vrati postojeće podatke ako dohvaćanje ne uspije
+        return userData;
     }
 }
 
 // Učitavanje artikala korisnika
 async function loadUserListings() {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/articles/user/${userData.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja artikala korisnika');
+        const { data, error } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('user_id', userData.id);
+            
+        if (error) {
+            throw error;
         }
         
-        const data = await response.json();
-        return data;
+        return data || [];
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom učitavanja vaših artikala.', 'error');
@@ -81,21 +81,37 @@ async function loadUserListings() {
 // Učitavanje omiljenih artikala korisnika
 async function loadUserFavorites() {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch('/api/favorites', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja omiljenih artikala');
+        // Pretpostavljam da imate tablicu favorites koja sadrži referencu na artikle
+        // Prvo dohvaćamo favorite, zatim detalje artikala
+        const { data: favorites, error: favoritesError } = await supabase
+            .from('favorites')
+            .select('article_id')
+            .eq('user_id', userData.id);
+            
+        if (favoritesError) {
+            throw favoritesError;
         }
         
-        const data = await response.json();
-        return data;
+        if (!favorites || favorites.length === 0) {
+            return [];
+        }
+        
+        // Dohvaćamo detalje artikala koji su favoriti
+        const articleIds = favorites.map(fav => fav.article_id);
+        const { data: articles, error: articlesError } = await supabase
+            .from('articles')
+            .select('*')
+            .in('id', articleIds);
+            
+        if (articlesError) {
+            throw articlesError;
+        }
+        
+        // Označimo da su u favoritima
+        return articles.map(article => ({
+            ...article,
+            isFavorite: true
+        })) || [];
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom učitavanja vaših omiljenih artikala.', 'error');
@@ -106,21 +122,42 @@ async function loadUserFavorites() {
 // Učitavanje narudžbi korisnika
 async function loadUserOrders() {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch('/api/orders', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja narudžbi korisnika');
+        // Dohvaćamo narudžbe
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', userData.id);
+            
+        if (ordersError) {
+            throw ordersError;
         }
         
-        const data = await response.json();
-        return data;
+        if (!orders || orders.length === 0) {
+            return [];
+        }
+        
+        // Za svaku narudžbu dohvaćamo stavke
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const { data: items, error: itemsError } = await supabase
+                .from('order_items')
+                .select('*, article:article_id(*)')
+                .eq('order_id', order.id);
+                
+            if (itemsError) {
+                console.error('Greška pri dohvaćanju stavki narudžbe:', itemsError);
+                return {
+                    ...order,
+                    items: []
+                };
+            }
+            
+            return {
+                ...order,
+                items: items || []
+            };
+        }));
+        
+        return ordersWithItems;
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom učitavanja vaših narudžbi.', 'error');
@@ -202,22 +239,22 @@ function renderUserListings(listings) {
     
     listings.forEach(item => {
         html += `
-            <div class="product-card" data-id="${item._id}">
+            <div class="product-card" data-id="${item.id}">
                 <div class="product-image">
-                    <a href="product.html?id=${item._id}">
+                    <a href="product.html?id=${item.id}">
                         <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" alt="${item.title}">
                     </a>
                     <div class="product-actions">
-                        <button class="edit-btn" data-id="${item._id}">
+                        <button class="edit-btn" data-id="${item.id}">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="delete-btn" data-id="${item._id}">
+                        <button class="delete-btn" data-id="${item.id}">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id}">${item.title}</a></h3>
+                    <h3 class="product-title"><a href="product.html?id=${item.id}">${item.title}</a></h3>
                     <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
                     <div class="product-meta">
                         <span class="product-size">${item.size}</span>
@@ -271,22 +308,22 @@ function renderUserFavorites(favorites) {
     
     favorites.forEach(item => {
         html += `
-            <div class="product-card" data-id="${item._id}">
+            <div class="product-card" data-id="${item.id}">
                 <div class="product-image">
-                    <a href="product.html?id=${item._id}">
+                    <a href="product.html?id=${item.id}">
                         <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" alt="${item.title}">
                     </a>
                     <div class="product-actions">
-                        <button class="favorite-btn active" data-id="${item._id}">
+                        <button class="favorite-btn active" data-id="${item.id}">
                             <i class="fas fa-heart"></i>
                         </button>
-                        <button class="cart-btn ${item.inCart ? 'active' : ''}" data-id="${item._id}">
+                        <button class="cart-btn ${item.inCart ? 'active' : ''}" data-id="${item.id}">
                             <i class="fa${item.inCart ? 's' : 'r'} fa-shopping-bag"></i>
                         </button>
                     </div>
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id}">${item.title}</a></h3>
+                    <h3 class="product-title"><a href="product.html?id=${item.id}">${item.title}</a></h3>
                     <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
                     <div class="product-meta">
                         <span class="product-size">${item.size}</span>
@@ -339,7 +376,7 @@ function renderUserOrders(orders) {
         const formattedDate = `${orderDate.getDate()}.${orderDate.getMonth() + 1}.${orderDate.getFullYear()}.`;
         
         html += `
-            <div class="order-item" data-id="${order._id}">
+            <div class="order-item" data-id="${order.id}">
                 <div class="order-header">
                     <div class="order-number">Narudžba #${order.order_number}</div>
                     <div class="order-date">${formattedDate}</div>
@@ -349,12 +386,12 @@ function renderUserOrders(orders) {
                     ${order.items.map(item => `
                         <div class="order-product">
                             <div class="product-image">
-                                <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.title}">
+                                <img src="${item.article?.images && item.article.images.length > 0 ? item.article.images[0] : 'images/placeholder.jpg'}" alt="${item.article?.title || 'Artikal'}">
                             </div>
                             <div class="product-details">
-                                <div class="product-title">${item.title}</div>
+                                <div class="product-title">${item.article?.title || 'Artikal'}</div>
                                 <div class="product-meta">
-                                    <span class="product-size">Veličina: ${item.size}</span>
+                                    <span class="product-size">Veličina: ${item.article?.size || 'N/A'}</span>
                                     <span class="product-price">Cijena: ${parseFloat(item.price).toFixed(2)} KM</span>
                                 </div>
                             </div>
@@ -379,23 +416,18 @@ async function deleteArticle(id) {
     }
     
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
+        const { error } = await supabase
+            .from('articles')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userData.id); // Dodajemo ovu provjeru da osiguramo da korisnik briše samo svoje artikle
         
-        const response = await fetch(`/api/articles?id=${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom brisanja artikla');
+        if (error) {
+            throw error;
         }
         
         // Ažuriranje lokalnih podataka
-        userListings = userListings.filter(item => item._id !== id);
+        userListings = userListings.filter(item => item.id !== id);
         
         // Ažuriranje prikaza
         renderUserListings(userListings);
@@ -406,9 +438,7 @@ async function deleteArticle(id) {
             profileItemCount.textContent = `${userListings.length} artikala`;
         }
         
-        // Prikaži poruku o uspjehu
         showMessage('Artikal je uspješno obrisan.', 'success');
-        
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom brisanja artikla.', 'error');
@@ -418,30 +448,23 @@ async function deleteArticle(id) {
 // Funkcija za uklanjanje artikla iz favorita
 async function removeFromFavorites(id) {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
+        const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('article_id', id)
+            .eq('user_id', userData.id);
         
-        const response = await fetch(`/api/favorites?id=${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom uklanjanja artikla iz favorita');
+        if (error) {
+            throw error;
         }
         
         // Ažuriranje lokalnih podataka
-        userFavorites = userFavorites.filter(item => item._id !== id);
+        userFavorites = userFavorites.filter(item => item.id !== id);
         
         // Ažuriranje prikaza
         renderUserFavorites(userFavorites);
         
-        // Prikaži poruku o uspjehu
         showMessage('Artikal je uklonjen iz favorita.', 'success');
-        
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom uklanjanja artikla iz favorita.', 'error');
@@ -454,19 +477,24 @@ async function toggleCart(id) {
     const isInCart = button.classList.contains('active');
     
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/cart?id=${id}`, {
-            method: isInCart ? 'DELETE' : 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom ažuriranja korpe');
+        if (isInCart) {
+            // Uklanjanje iz korpe
+            const { error } = await supabase
+                .from('cart_items')
+                .delete()
+                .eq('article_id', id)
+                .eq('user_id', userData.id);
+                
+            if (error) throw error;
+        } else {
+            // Dodavanje u korpu
+            const { error } = await supabase
+                .from('cart_items')
+                .insert([
+                    { user_id: userData.id, article_id: id, quantity: 1 }
+                ]);
+                
+            if (error) throw error;
         }
         
         // Ažuriranje UI-a
@@ -481,11 +509,10 @@ async function toggleCart(id) {
         }
         
         // Ažuriranje lokalnih podataka
-        const item = userFavorites.find(item => item._id === id);
+        const item = userFavorites.find(item => item.id === id);
         if (item) {
             item.inCart = !isInCart;
         }
-        
     } catch (error) {
         console.error('Greška:', error);
         showMessage('Došlo je do greške prilikom ažuriranja korpe.', 'error');
@@ -579,10 +606,18 @@ function initializeLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
+        logoutBtn.addEventListener('click', async function() {
             if (confirm('Jeste li sigurni da se želite odjaviti?')) {
-                localStorage.removeItem('prijavljeniKorisnik');
-                localStorage.removeItem('authToken');
+                // Koristi Supabase za odjavu
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    console.error('Greška prilikom odjave:', error);
+                    showMessage('Došlo je do greške prilikom odjave.', 'error');
+                    return;
+                }
+                
+                // Preusmjeri na početnu stranicu
                 window.location.href = 'index.html';
             }
         });
@@ -642,7 +677,7 @@ function showMessage(message, type = 'info') {
 // Inicijalizacija stranice
 document.addEventListener('DOMContentLoaded', async function() {
     // Provjera je li korisnik prijavljen
-    userData = checkUserLoggedIn();
+    userData = await checkUserLoggedIn();
     if (!userData) return;
     
     // Inicijalizacija UI komponenti
