@@ -54,12 +54,16 @@ async function loadUserData() {
 }
 
 // Učitavanje artikala korisnika
+// Učitavanje artikala korisnika
 async function loadUserListings() {
     try {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/articles/user/${userData.id}`, {
+        // Osiguravamo da koristimo ID prijavljenog korisnika
+        const currentUserId = userData.id;
+        
+        const response = await fetch(`/api/articles/user/${currentUserId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
