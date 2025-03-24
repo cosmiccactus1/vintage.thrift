@@ -30,35 +30,6 @@ async function verifyToken(req) {
   }
 }
 
-// Helper za izvlačenje userId iz zahtjeva
-function extractUserId(req) {
-  // Log za debugiranje - možete ukloniti nakon što sve radi
-  console.log('Request URL:', req.url);
-  console.log('Request query:', req.query);
-  
-  // Nova metoda: provjeri putanju u formatu /api/users/:id
-  const pathMatch = req.url.match(/\/api\/users\/([^\/]+)$/);
-  if (pathMatch) {
-    return pathMatch[1];
-  }
-  
-  // Načini na koje možemo dobiti userId:
-  // 1. Iz query parametra: /api/users?id=123
-  if (req.query && req.query.id) {
-    return req.query.id;
-  }
-  
-  // 2. Iz putanje: /api/users/123 ili samo /123
-  const urlParts = req.url.split('/').filter(Boolean);
-  if (urlParts.length > 0) {
-    // Preskočimo "api" i "users" dijelove ako postoje
-    const lastPart = urlParts[urlParts.length - 1];
-    return lastPart;
-  }
-  
-  return null;
-}
-
 module.exports = async (req, res) => {
   // Podešavanje CORS headera
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -71,11 +42,6 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Dodatni logging za debugiranje
-  console.log('Primljen zahtjev za:', req.url);
-  console.log('Metoda:', req.method);
-  console.log('Headers:', req.headers);
-
   try {
     // Provjera autentikacije
     const authUserId = await verifyToken(req);
@@ -85,16 +51,9 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // GET zahtjevi za dohvaćanje korisnika
-    if (req.method === 'GET') {
-      const userId = extractUserId(req);
-      
-      console.log('Ekstrahiran userId:', userId);
-      
-      if (!userId) {
-        res.status(400).json({ message: 'Nedostaje ID korisnika' });
-        return;
-      }
+    // GET /api/users/:id - Dohvaćanje podataka o korisniku
+    if (req.method === 'GET' && req.url.match(/\/api\/users\/([^\/]+)$/)) {
+      const userId = req.url.match(/\/api\/users\/([^\/]+)$/)[1];
       
       // Provjera je li korisnik traži svoje podatke ili tuđe
       if (userId !== authUserId && userId !== 'me') {
@@ -132,19 +91,13 @@ module.exports = async (req, res) => {
       // Ukloni osjetljive podatke
       delete responseData.password;
       
-      console.log('Odgovor za korisnika:', responseData);
       res.status(200).json(responseData);
       return;
     }
     
     // PUT /api/users/:id - Ažuriranje podataka o korisniku
-    if (req.method === 'PUT') {
-      const userId = extractUserId(req);
-      
-      if (!userId) {
-        res.status(400).json({ message: 'Nedostaje ID korisnika' });
-        return;
-      }
+    if (req.method === 'PUT' && req.url.match(/\/api\/users\/([^\/]+)$/)) {
+      const userId = req.url.match(/\/api\/users\/([^\/]+)$/)[1];
       
       // Provjera je li korisnik ažurira svoje podatke
       if (userId !== authUserId && userId !== 'me') {

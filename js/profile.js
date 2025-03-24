@@ -34,7 +34,7 @@ async function loadUserData() {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/users/${userData.id}`, {
+        const response = await fetch(`/api/users?id=${userData.id}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -59,7 +59,7 @@ async function loadUserListings() {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/articles/user/${userData.id}`, {
+        const response = await fetch(`/api/articles?user_id=${userData.id}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -382,7 +382,7 @@ async function deleteArticle(id) {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/articles/${id}`, {
+        const response = await fetch(`/api/articles?id=${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -421,7 +421,7 @@ async function removeFromFavorites(id) {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/favorites/${id}`, {
+        const response = await fetch(`/api/favorites?id=${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ async function toggleCart(id) {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
-        const response = await fetch(`/api/cart/${id}`, {
+        const response = await fetch(`/api/cart?id=${id}`, {
             method: isInCart ? 'DELETE' : 'POST',
             headers: {
                 'Content-Type': 'application/json',
