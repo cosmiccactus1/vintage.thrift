@@ -193,26 +193,28 @@ async function saveAsDraft() {
     if (!userData) return;
     
     // Dohvaćanje vrijednosti forme
-    const formData = new FormData(document.getElementById('prodaj-form'));
+    const form = document.getElementById('prodaj-form');
+    const formData = new FormData(form);
     
-    // Dodavanje slika u formData
-    uploadedImages.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-    });
-    
-    // Dodavanje statusa i korisničkog ID-a
-    formData.append('status', 'draft');
-    formData.append('userId', userData.id);
+    // Pretvaramo FormData u običan objekt za JSON
+    const articleData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        price: parseFloat(formData.get('price')),
+        category: formData.get('category'),
+        status: 'draft',
+        images: []
+    };
     
     try {
         // API poziv za spremanje nacrta
-        const response = await fetch('/api/articles/draft', {
+        const response = await fetch('/api/articles', {
             method: 'POST',
             headers: {
-                // Dodajemo Authorization header ako postoji token
-                ...(userData.token ? { 'Authorization': `Bearer ${userData.token}` } : {})
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userData.token}`
             },
-            body: formData
+            body: JSON.stringify(articleData)
         });
         
         if (!response.ok) {
@@ -250,31 +252,35 @@ async function publishArticle(e) {
     }
     
     // Dohvaćanje vrijednosti forme
-    const formData = new FormData(document.getElementById('prodaj-form'));
+    const form = document.getElementById('prodaj-form');
+    const formData = new FormData(form);
     
-    // Dodavanje slika u formData
-    uploadedImages.forEach((image, index) => {
-        formData.append(`image${index}`, image);
-    });
-    
-    // Dodavanje statusa i korisničkog ID-a
-    formData.append('status', 'active');
-    formData.append('userId', userData.id);
+    // Pretvaramo FormData u običan objekt za JSON
+    const articleData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        price: parseFloat(formData.get('price')),
+        category: formData.get('category'),
+        status: 'active',
+        images: []
+    };
     
     try {
         // Ispišimo šta ćemo poslati
         console.log('Šaljem zahtjev na:', '/api/articles');
         console.log('userID:', userData.id);
         console.log('Token (ako postoji):', userData.token);
+        console.log('Podaci za slanje:', articleData);
         
         // API poziv za objavljivanje artikla
-const response = await fetch('/api/articles', {
-    method: 'POST',
-    headers: {
-        'Authorization': `Bearer ${userData.token}`
-    },
-    body: formData
-});
+        const response = await fetch('/api/articles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userData.token}`
+            },
+            body: JSON.stringify(articleData)
+        });
         
         // Logiramo status odgovora
         console.log('Status odgovora:', response.status);
