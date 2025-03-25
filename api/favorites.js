@@ -30,6 +30,41 @@ async function verifyToken(req) {
   }
 }
 
+// Helper funkcija za parsiranje URL-a
+function parseURL(req) {
+  console.log('Request URL:', req.url);
+  
+  // Ako URL sadrži /check/ to znači da je ruta za provjeru favorite
+  if (req.url.includes('/check/')) {
+    const id = req.url.split('/check/')[1];
+    return {
+      type: 'check_favorite',
+      articleId: id
+    };
+  }
+  
+  // Ako je prazan URL ili samo /, to je dohvaćanje svih favorita
+  if (req.url === '/' || req.url === '') {
+    return {
+      type: 'all_favorites'
+    };
+  }
+  
+  // Ako imamo ID u putanji, to je za dodavanje/brisanje
+  const match = req.url.match(/\/([^\/]+)$/);
+  if (match) {
+    return {
+      type: 'single_article',
+      articleId: match[1]
+    };
+  }
+  
+  // Default: nepoznata putanja
+  return {
+    type: 'unknown'
+  };
+}
+
 module.exports = async (req, res) => {
   // Podešavanje CORS headera
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,16 +78,20 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Provjera autentikacije (za sve metode osim provjere)
+    // Parsiranje URL-a
+    const parsedURL = parseURL(req);
+    console.log('Parsed URL:', parsedURL);
+    
+    // Provjera autentikacije (osim za check_favorite)
     const userId = await verifyToken(req);
     
-    if (req.url !== '/api/favorites/check' && !userId) {
+    if (parsedURL.type !== 'check_favorite' && !userId) {
       res.status(401).json({ message: 'Nije autorizovano' });
       return;
     }
     
-    // GET /api/favorites - Dohvaćanje svih favorita korisnika
-    if (req.method === 'GET' && req.url === '/api/favorites') {
+    // GET - Dohvaćanje svih favorita korisnika
+    if (req.method === 'GET' && parsedURL.type === 'all_favorites') {
       // Dohvatanje favorita s podacima o artiklima
       const { data, error } = await supabase
         .from('favorites')
@@ -76,14 +115,14 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // GET /api/favorites/check/:id - Provjera je li artikal u favoritima
-    if (req.method === 'GET' && req.url.match(/\/api\/favorites\/check\/([^\/]+)$/)) {
+    // GET - Provjera je li artikal u favoritima
+    if (req.method === 'GET' && parsedURL.type === 'check_favorite') {
       if (!userId) {
         res.status(200).json({ isFavorite: false });
         return;
       }
       
-      const articleId = req.url.match(/\/api\/favorites\/check\/([^\/]+)$/)[1];
+      const articleId = parsedURL.articleId;
       
       const { data, error } = await supabase
         .from('favorites')
@@ -98,9 +137,9 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // POST /api/favorites/:id - Dodavanje artikla u favorite
-    if (req.method === 'POST' && req.url.match(/\/api\/favorites\/([^\/]+)$/)) {
-      const articleId = req.url.match(/\/api\/favorites\/([^\/]+)$/)[1];
+    // POST - Dodavanje artikla u favorite
+    if (req.method === 'POST' && parsedURL.type === 'single_article') {
+      const articleId = parsedURL.articleId;
       
       // Provjera da li artikal postoji
       const { data: articleExists, error: articleError } = await supabase
@@ -147,9 +186,9 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // DELETE /api/favorites/:id - Uklanjanje artikla iz favorita
-    if (req.method === 'DELETE' && req.url.match(/\/api\/favorites\/([^\/]+)$/)) {
-      const articleId = req.url.match(/\/api\/favorites\/([^\/]+)$/)[1];
+    // DELETE - Uklanjanje artikla iz favorita
+    if (req.method === 'DELETE' && parsedURL.type === 'single_article') {
+      const articleId = parsedURL.articleId;
       
       const { error } = await supabase
         .from('favorites')
