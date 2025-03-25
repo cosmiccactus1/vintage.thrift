@@ -40,6 +40,32 @@ async function parseBody(req) {
   return data ? JSON.parse(data) : {};
 }
 
+// Helper funkcija za parsiranje URL-a
+function parseURL(req) {
+  console.log('Request URL:', req.url);
+  
+  // Ako je prazan URL ili samo /, to je dohvaćanje svih narudžbi ili kreiranje nove
+  if (req.url === '/' || req.url === '') {
+    return {
+      type: 'all_orders'
+    };
+  }
+  
+  // Ako imamo ID u putanji, to je za dohvaćanje, ažuriranje ili brisanje jedne narudžbe
+  const match = req.url.match(/\/([^\/]+)$/);
+  if (match) {
+    return {
+      type: 'single_order',
+      orderId: match[1]
+    };
+  }
+  
+  // Default: nepoznata putanja
+  return {
+    type: 'unknown'
+  };
+}
+
 module.exports = async (req, res) => {
   console.log('Orders API poziv primljen:', req.method, req.url);
   
@@ -55,6 +81,10 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Parsiranje URL-a
+    const parsedURL = parseURL(req);
+    console.log('Parsed URL:', parsedURL);
+    
     // Provjera autentikacije (za sve metode)
     const userId = await verifyToken(req);
     
@@ -63,8 +93,8 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // GET /api/orders - Dohvaćanje svih narudžbi korisnika
-    if (req.method === 'GET' && req.url === '/api/orders') {
+    // GET - Dohvaćanje svih narudžbi korisnika
+    if (req.method === 'GET' && parsedURL.type === 'all_orders') {
       console.log('Dohvaćanje narudžbi za korisnika:', userId);
       
       // Dohvatanje narudžbi s podacima o artiklima
@@ -96,9 +126,9 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // GET /api/orders/:id - Dohvaćanje jedne narudžbe
-    if (req.method === 'GET' && req.url.match(/\/api\/orders\/([^\/]+)$/)) {
-      const orderId = req.url.match(/\/api\/orders\/([^\/]+)$/)[1];
+    // GET - Dohvaćanje jedne narudžbe
+    if (req.method === 'GET' && parsedURL.type === 'single_order') {
+      const orderId = parsedURL.orderId;
       
       // Dohvatanje narudžbe
       const { data: order, error } = await supabase
@@ -134,8 +164,8 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // POST /api/orders - Kreiranje nove narudžbe
-    if (req.method === 'POST' && req.url === '/api/orders') {
+    // POST - Kreiranje nove narudžbe
+    if (req.method === 'POST' && parsedURL.type === 'all_orders') {
       const body = await parseBody(req);
       
       // Validacija inputa
@@ -213,9 +243,9 @@ module.exports = async (req, res) => {
       return;
     }
     
-    // PUT /api/orders/:id - Ažuriranje statusa narudžbe
-    if (req.method === 'PUT' && req.url.match(/\/api\/orders\/([^\/]+)$/)) {
-      const orderId = req.url.match(/\/api\/orders\/([^\/]+)$/)[1];
+    // PUT - Ažuriranje statusa narudžbe
+    if (req.method === 'PUT' && parsedURL.type === 'single_order') {
+      const orderId = parsedURL.orderId;
       const body = await parseBody(req);
       
       // Validacija inputa
@@ -246,22 +276,4 @@ module.exports = async (req, res) => {
         .from('orders')
         .update({ status: body.status })
         .eq('id', orderId)
-        .select();
-      
-      if (error) throw error;
-      
-      res.status(200).json({
-        ...updatedOrder[0],
-        _id: updatedOrder[0].id
-      });
-      return;
-    }
-    
-    // Ako nijedna ruta ne odgovara
-    res.status(404).json({ message: 'Ruta nije pronađena' });
-    
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Interna serverska greška', error: error.message });
-  }
-};
+        .
