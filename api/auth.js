@@ -96,16 +96,16 @@ module.exports = async (req, res) => {
       }
       
       // Odgovor
-      res.status(201).json({
-        message: 'Registracija uspješna',
-        user: {
-          ...newUser,
-          _id: newUser.id
-        },
-        token: authData.session ? authData.session.access_token : null
-      });
-      return;
-    }
+     res.status(201).json({
+    message: 'Registracija uspješna',
+    user: {
+      ...newUser,
+      _id: newUser.id
+    },
+    token: sessionData.session.access_token  // Ovo je promijenjeno
+  });
+  return;
+}
     
     // POST /api/auth/login - Prijava korisnika
     if (req.method === 'POST' && req.url === '/api/auth/login') {
