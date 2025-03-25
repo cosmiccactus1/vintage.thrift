@@ -276,4 +276,22 @@ module.exports = async (req, res) => {
         .from('orders')
         .update({ status: body.status })
         .eq('id', orderId)
-        .
+        .select();
+        
+      if (error) throw error;
+      
+      res.status(200).json({
+        ...updatedOrder[0],
+        _id: updatedOrder[0].id
+      });
+      return;
+    }
+    
+    // Ako nijedna ruta ne odgovara
+    res.status(404).json({ message: 'Ruta nije pronađena' });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Interna serverska greška', error: error.message });
+  }
+};
