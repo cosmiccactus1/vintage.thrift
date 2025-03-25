@@ -77,6 +77,20 @@ module.exports = async (req, res) => {
         throw authError;
       }
       
+      // DODATO OVO - Odmah prijavite korisnika da dobijete token
+      console.log('Korisnik kreiran, pokušaj automatske prijave za:', body.email);
+      const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+        email: body.email,
+        password: body.password
+      });
+      
+      if (sessionError) {
+        console.error('Greška prilikom automatske prijave:', sessionError);
+        throw sessionError;
+      }
+      
+      console.log('Automatska prijava uspješna, token generiran');
+      
       // Kreiranje korisnika u users tablici
       const newUser = {
         id: authData.user.id,
@@ -96,16 +110,16 @@ module.exports = async (req, res) => {
       }
       
       // Odgovor
-     res.status(201).json({
-    message: 'Registracija uspješna',
-    user: {
-      ...newUser,
-      _id: newUser.id
-    },
-    token: sessionData.session.access_token  // Ovo je promijenjeno
-  });
-  return;
-}
+      res.status(201).json({
+        message: 'Registracija uspješna',
+        user: {
+          ...newUser,
+          _id: newUser.id
+        },
+        token: sessionData.session.access_token
+      });
+      return;
+    }
     
     // POST /api/auth/login - Prijava korisnika
     if (req.method === 'POST' && req.url === '/api/auth/login') {
