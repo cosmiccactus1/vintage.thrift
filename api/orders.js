@@ -40,19 +40,27 @@ async function parseBody(req) {
   return data ? JSON.parse(data) : {};
 }
 
-// Helper funkcija za parsiranje URL-a
+// Poboljšana helper funkcija za parsiranje URL-a
 function parseURL(req) {
-  console.log('Request URL:', req.url);
+  console.log('Original Request URL:', req.url);
+  
+  // Prvo uklonite bilo koji prefiks "/api/orders" ako postoji
+  let path = req.url;
+  if (path.startsWith('/api/orders')) {
+    path = path.replace('/api/orders', '');
+  }
+  
+  console.log('Cleaned path for parsing:', path);
   
   // Ako je prazan URL ili samo /, to je dohvaćanje svih narudžbi ili kreiranje nove
-  if (req.url === '/' || req.url === '') {
+  if (path === '/' || path === '') {
     return {
       type: 'all_orders'
     };
   }
   
   // Ako imamo ID u putanji, to je za dohvaćanje, ažuriranje ili brisanje jedne narudžbe
-  const match = req.url.match(/\/([^\/]+)$/);
+  const match = path.match(/\/([^\/]+)$/);
   if (match) {
     return {
       type: 'single_order',
@@ -87,15 +95,37 @@ module.exports = async (req, res) => {
     
     // Provjera autentikacije (za sve metode)
     const userId = await verifyToken(req);
+    console.log('Autenticirani korisnik:', userId);
     
     if (!userId) {
       res.status(401).json({ message: 'Nije autorizovano' });
       return;
     }
     
+    // GET - Test ruta
+    if (req.method === 'GET' && req.url === '/test') {
+      res.status(200).json({ message: 'Orders API radi' });
+      return;
+    }
+    
     // GET - Dohvaćanje svih narudžbi korisnika
     if (req.method === 'GET' && parsedURL.type === 'all_orders') {
       console.log('Dohvaćanje narudžbi za korisnika:', userId);
+      
+      // Provjera postoji li tablica
+      try {
+        const { count, error: countError } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+          
+        if (countError) {
+          console.error('Greška pri provjeri tablice narudžbi:', countError);
+        } else {
+          console.log('Tablica narudžbi postoji, broj redova:', count);
+        }
+      } catch (e) {
+        console.error('Iznimka pri provjeri tablice:', e);
+      }
       
       // Dohvatanje narudžbi s podacima o artiklima
       const { data: orders, error } = await supabase
@@ -112,14 +142,22 @@ module.exports = async (req, res) => {
         throw error;
       }
       
+      console.log('Broj dohvaćenih narudžbi:', orders ? orders.length : 0);
+      
+      // Ako nema narudžbi, vrati prazan niz
+      if (!orders || orders.length === 0) {
+        res.status(200).json([]);
+        return;
+      }
+      
       // Transformacija podataka za frontend
       const formattedOrders = orders.map(order => ({
         ...order,
         _id: order.id,
-        items: order.order_items.map(item => ({
+        items: order.order_items ? order.order_items.map(item => ({
           ...item,
           _id: item.id
-        }))
+        })) : []
       }));
       
       res.status(200).json(formattedOrders);
@@ -129,6 +167,7 @@ module.exports = async (req, res) => {
     // GET - Dohvaćanje jedne narudžbe
     if (req.method === 'GET' && parsedURL.type === 'single_order') {
       const orderId = parsedURL.orderId;
+      console.log('Dohvaćanje jedne narudžbe:', orderId);
       
       // Dohvatanje narudžbe
       const { data: order, error } = await supabase
@@ -145,6 +184,7 @@ module.exports = async (req, res) => {
         if (error.code === 'PGRST116') { // Record not found error
           res.status(404).json({ message: 'Narudžba nije pronađena' });
         } else {
+          console.error('Greška pri dohvatanju narudžbe:', error);
           throw error;
         }
         return;
@@ -154,10 +194,10 @@ module.exports = async (req, res) => {
       const formattedOrder = {
         ...order,
         _id: order.id,
-        items: order.order_items.map(item => ({
+        items: order.order_items ? order.order_items.map(item => ({
           ...item,
           _id: item.id
-        }))
+        })) : []
       };
       
       res.status(200).json(formattedOrder);
@@ -167,6 +207,7 @@ module.exports = async (req, res) => {
     // POST - Kreiranje nove narudžbe
     if (req.method === 'POST' && parsedURL.type === 'all_orders') {
       const body = await parseBody(req);
+      console.log('Kreiranje nove narudžbe, podaci:', JSON.stringify(body).substring(0, 200) + '...');
       
       // Validacija inputa
       if (!body.cartItems || !body.shippingAddress || !body.totalPrice) {
@@ -186,7 +227,10 @@ module.exports = async (req, res) => {
         })
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Greška pri kreiranju narudžbe:', error);
+        throw error;
+      }
       
       if (!order || order.length === 0) {
         res.status(500).json({ message: 'Greška prilikom kreiranja narudžbe' });
@@ -207,7 +251,10 @@ module.exports = async (req, res) => {
         .from('order_items')
         .insert(orderItems);
       
-      if (orderItemsError) throw orderItemsError;
+      if (orderItemsError) {
+        console.error('Greška pri kreiranju stavki narudžbe:', orderItemsError);
+        throw orderItemsError;
+      }
       
       // Korak 3: Pražnjenje korpe korisnika
       const { error: clearCartError } = await supabase
@@ -215,7 +262,10 @@ module.exports = async (req, res) => {
         .delete()
         .eq('user_id', userId);
       
-      if (clearCartError) throw clearCartError;
+      if (clearCartError) {
+        console.error('Greška pri pražnjenju korpe:', clearCartError);
+        throw clearCartError;
+      }
       
       // Dohvaćanje kompletne narudžbe s artiklima za odgovor
       const { data: completeOrder, error: fetchError } = await supabase
@@ -227,16 +277,19 @@ module.exports = async (req, res) => {
         .eq('id', order[0].id)
         .single();
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Greška pri dohvatanju kreirane narudžbe:', fetchError);
+        throw fetchError;
+      }
       
       // Transformacija za frontend
       const formattedOrder = {
         ...completeOrder,
         _id: completeOrder.id,
-        items: completeOrder.order_items.map(item => ({
+        items: completeOrder.order_items ? completeOrder.order_items.map(item => ({
           ...item,
           _id: item.id
-        }))
+        })) : []
       };
       
       res.status(201).json(formattedOrder);
@@ -247,6 +300,7 @@ module.exports = async (req, res) => {
     if (req.method === 'PUT' && parsedURL.type === 'single_order') {
       const orderId = parsedURL.orderId;
       const body = await parseBody(req);
+      console.log('Ažuriranje statusa narudžbe:', orderId, 'novi status:', body.status);
       
       // Validacija inputa
       if (!body.status) {
@@ -266,6 +320,7 @@ module.exports = async (req, res) => {
         if (checkError.code === 'PGRST116') { // Record not found error
           res.status(404).json({ message: 'Narudžba nije pronađena' });
         } else {
+          console.error('Greška pri provjeri narudžbe:', checkError);
           throw checkError;
         }
         return;
@@ -278,7 +333,10 @@ module.exports = async (req, res) => {
         .eq('id', orderId)
         .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Greška pri ažuriranju statusa narudžbe:', error);
+        throw error;
+      }
       
       res.status(200).json({
         ...updatedOrder[0],
@@ -288,6 +346,7 @@ module.exports = async (req, res) => {
     }
     
     // Ako nijedna ruta ne odgovara
+    console.log('Ruta nije pronađena:', req.method, req.url);
     res.status(404).json({ message: 'Ruta nije pronađena' });
     
   } catch (error) {
