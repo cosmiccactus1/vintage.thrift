@@ -23,28 +23,28 @@
                         <h3>Godišnje doba</h3>
                         <ul>
                             <li><a href="index.html" class="filter-option" data-season="sve">Sve</a></li>
-                            <li><a href="index.html" class="filter-option" data-season="proljece">Proljeće</a></li>
-                            <li><a href="index.html" class="filter-option" data-season="ljeto">Ljeto</a></li>
-                            <li><a href="index.html" class="filter-option" data-season="jesen">Jesen</a></li>
-                            <li><a href="index.html" class="filter-option" data-season="zima">Zima</a></li>
+                            <li><a href="index.html?season=proljece" class="filter-option" data-season="proljece">Proljeće</a></li>
+                            <li><a href="index.html?season=ljeto" class="filter-option" data-season="ljeto">Ljeto</a></li>
+                            <li><a href="index.html?season=jesen" class="filter-option" data-season="jesen">Jesen</a></li>
+                            <li><a href="index.html?season=zima" class="filter-option" data-season="zima">Zima</a></li>
                         </ul>
                     </div>
                     <div class="category-section">
                         <h3>Kategorija</h3>
                         <ul>
                             <li><a href="index.html" class="filter-option" data-type="sve">Sve</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="musko">Muško</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="zensko">Žensko</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="djecije">Dječije</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="jakne">Jakne</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="duksevi">Duksevi</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="majice">Majice</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="jeans">Jeans</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="handmade">Handmade</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="starine">Starine</a></li>
-                            <li><a href="index.html" class="filter-option" data-type="ostalo">Ostalo</a></li>
+                            <li><a href="index.html?category=musko" class="filter-option" data-type="musko">Muško</a></li>
+                            <li><a href="index.html?category=zensko" class="filter-option" data-type="zensko">Žensko</a></li>
+                            <li><a href="index.html?category=djecije" class="filter-option" data-type="djecije">Dječije</a></li>
+                            <li><a href="index.html?category=jakne" class="filter-option" data-type="jakne">Jakne</a></li>
+                            <li><a href="index.html?category=duksevi" class="filter-option" data-type="duksevi">Duksevi</a></li>
+                            <li><a href="index.html?category=majice" class="filter-option" data-type="majice">Majice</a></li>
+                            <li><a href="index.html?category=jeans" class="filter-option" data-type="jeans">Jeans</a></li>
+                            <li><a href="index.html?category=sorcevi" class="filter-option" data-type="sorcevi">Šorcevi</a></li>
+                            <li><a href="index.html?category=kosulje" class="filter-option" data-type="kosulje">Košulje i bluze</a></li>
+                            <li><a href="index.html?category=handmade" class="filter-option" data-type="handmade">Handmade</a></li>
+                            <li><a href="index.html?category=starine" class="filter-option" data-type="starine">Starine</a></li>
+                            <li><a href="index.html?category=ostalo" class="filter-option" data-type="ostalo">Ostalo</a></li>
                         </ul>
                     </div>
                 </div>
@@ -75,46 +75,5 @@
     </footer>
     
     <script src="js/product.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hamburger menu funkcionalnost
-            const hamburgerIcon = document.getElementById('hamburgerIcon');
-            const menuDropdown = document.getElementById('menuDropdown');
-            
-            if (hamburgerIcon && menuDropdown) {
-                hamburgerIcon.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    menuDropdown.classList.toggle('show');
-                });
-                
-                // Zatvaranje menija klikom izvan
-                document.addEventListener('click', function(e) {
-                    if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
-                        hamburgerIcon.classList.remove('active');
-                        menuDropdown.classList.remove('show');
-                    }
-                });
-            }
-            
-            // Provjera je li korisnik prijavljen
-            const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
-            const sellButton = document.getElementById('sellButton');
-            const profileLink = document.getElementById('profileLink');
-            
-            if (prijavljeniKorisnik) {
-                // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na sell.html
-                sellButton.href = 'sell.html';
-                
-                // Prikaži link za profil
-                profileLink.style.display = 'block';
-            } else {
-                // Ako korisnik nije prijavljen, link "Prodaj svoju odjeću" vodi na register.html
-                sellButton.href = 'register.html';
-                
-                // Sakrij link za profil
-                profileLink.style.display = 'none';
-            }
-        });
-    </script>
 </body>
 </html>
