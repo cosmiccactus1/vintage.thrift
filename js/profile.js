@@ -1,642 +1,364 @@
 /**
- * Vintage Thrift Store - Profile JavaScript
+ * Vintage Thrift Store - Product Detail JavaScript
  * Za rad s API-jem umjesto lokalnih podataka
  */
 
 // Globalne varijable
-let userData = null;
-let userListings = [];
-let userFavorites = [];
-let userOrders = [];
-let activeTab = 'listings';
+let productId = null;
+let currentProduct = null;
 
-// Provjera je li korisnik prijavljen
-function checkUserLoggedIn() {
-    console.log("Pokretanje checkUserLoggedIn");
-    
-    const userDataString = localStorage.getItem('prijavljeniKorisnik');
-    
-    console.log("userDataString iz localStorage:", userDataString);
-    
-    if (!userDataString) {
-        // Ako korisnik nije prijavljen, preusmjeri na register.html
-        window.location.href = 'register.html';
+// Dohvatanje ID-a proizvoda iz URL-a
+function getProductIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('id');
+}
+
+// Dohvatanje proizvoda s API-ja
+async function fetchProduct(id) {
+    try {
+        const url = `/api/articles/${id}`;
+        console.log("Fetching product from URL:", url);
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Error response: ${response.status} ${response.statusText}`);
+            throw new Error('Greška prilikom dohvatanja proizvoda');
+        }
+        
+        const data = await response.json();
+        console.log("API response:", data);
+        
+        // Ako API vraća niz, uzmemo prvi element (ili element koji odgovara ID-u)
+        if (Array.isArray(data) && data.length > 0) {
+            // Pokušaj pronaći artikal s odgovarajućim ID-em
+            const product = data.find(item => (item._id === id || item.id === id));
+            // Ako ne nađemo odgovarajući artikal, uzmi prvi
+            return product || data[0];
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Greška:', error);
         return null;
     }
+}
+
+// Dohvaćanje informacija o korisniku
+async function fetchUserInfo(userId) {
+    if (!userId) return null;
     
     try {
-        const parsedUserData = JSON.parse(userDataString);
-        console.log("Parsirani userData:", parsedUserData);
-        return parsedUserData;
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) {
+            console.error(`Error fetching user info: ${response.status}`);
+            return null;
+        }
+        
+        const userData = await response.json();
+        return userData;
     } catch (error) {
-        console.error('Greška prilikom parsiranja podataka korisnika:', error);
+        console.error('Error fetching user info:', error);
         return null;
     }
 }
 
-// Učitavanje podataka korisnika
-async function loadUserData() {
-    console.log("Pokretanje loadUserData, userData:", userData);
-    
+// Provjera statusa favorita za proizvod
+async function fetchFavoriteStatus(id) {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        console.log("authToken iz localStorage:", token);
-        
-        console.log("Pokušavanje dohvaćanja podataka s URL-a:", `/api/users/${userData.id}`);
-        
-        const response = await fetch(`/api/users/${userData.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        console.log("API odgovor status:", response.status);
-        
+        const response = await fetch(`/api/favorites/check/${id}`);
         if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja podataka korisnika');
+            // Samo vrati false ako API nije implementiran
+            return false;
         }
         
         const data = await response.json();
-        console.log("Dohvaćeni podaci korisnika:", data);
-        
-        return data;
+        return data.isFavorite;
     } catch (error) {
-        console.error('Greška u loadUserData:', error);
-        showMessage('Došlo je do greške prilikom učitavanja podataka korisnika.', 'error');
-        return userData; // Vrati postojeće podatke ako dohvaćanje ne uspije
+        console.error('Greška pri dohvaćanju statusa favorita:', error);
+        return false;
     }
 }
 
-// Učitavanje artikala korisnika
-async function loadUserListings() {
-    console.log("Pokretanje loadUserListings");
-    
+// Provjera statusa korpe za proizvod
+async function fetchCartStatus(id) {
     try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        // Osiguravamo da koristimo ID prijavljenog korisnika
-        const currentUserId = userData.id;
-        console.log("currentUserId za dohvaćanje artikala:", currentUserId);
-        
-        console.log("Pokušavanje dohvaćanja artikala s URL-a:", `/api/articles/user/${currentUserId}`);
-        
-        const response = await fetch(`/api/articles/user/${currentUserId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        console.log("API odgovor status za artikle:", response.status);
-        
+        const response = await fetch(`/api/cart/check/${id}`);
         if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja artikala korisnika');
+            // Samo vrati false ako API nije implementiran
+            return false;
         }
         
         const data = await response.json();
-        console.log("Dohvaćeni artikli:", data);
-        
-        // Dodatno filtriranje na frontendu za svaki slučaj
-        const filteredData = data.filter(item => item.user_id === currentUserId);
-        console.log("Filtrirani artikli korisnika:", filteredData);
-        
-        return filteredData; // Vraća samo artikle trenutnog korisnika
+        return data.isInCart;
     } catch (error) {
-        console.error('Greška u loadUserListings:', error);
-        showMessage('Došlo je do greške prilikom učitavanja vaših artikala.', 'error');
-        return [];
+        console.error('Greška pri dohvaćanju statusa korpe:', error);
+        return false;
     }
 }
 
-// Učitavanje omiljenih artikala korisnika
-async function loadUserFavorites() {
-    try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch('/api/favorites', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja omiljenih artikala');
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom učitavanja vaših omiljenih artikala.', 'error');
-        return [];
-    }
-}
-
-// Učitavanje narudžbi korisnika
-async function loadUserOrders() {
-    try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch('/api/orders', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom dohvatanja narudžbi korisnika');
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom učitavanja vaših narudžbi.', 'error');
-        return [];
-    }
-}
-
-// Inicijalizacija podataka profila
-async function initializeProfile() {
-    // Učitavanje podataka
-    userData = await loadUserData();
-    userListings = await loadUserListings();
-    userFavorites = await loadUserFavorites();
-    userOrders = await loadUserOrders();
-    
-    // Ažuriranje UI-a
-    updateProfileInfo();
-    renderUserListings(userListings);
-    renderUserFavorites(userFavorites);
-    renderUserOrders(userOrders);
-}
-
-// Ažuriranje informacija o profilu
-function updateProfileInfo() {
-    // Ažuriranje imena korisnika
-    const profileUsername = document.getElementById('profileUsername');
-    if (profileUsername) {
-        profileUsername.textContent = userData.username || 'Korisničko ime';
-    }
-    
-    // Ažuriranje avatara korisnika
-    const profileAvatar = document.getElementById('profileAvatar');
-    if (profileAvatar) {
-        // Dodajte privremeno console.log
-        console.log("Avatar URL:", userData.avatar_url);
-        // Koristimo lokalnu sliku umjesto placeholder.com servisa
-        profileAvatar.src = userData.avatar_url || 'images/placeholder.jpg';
-    }
-    
-    // Ažuriranje broja artikala
-    const profileItemCount = document.getElementById('profileItemCount');
-    if (profileItemCount) {
-        profileItemCount.textContent = `${userListings.length} artikala`;
-    }
-    
-    // Ažuriranje datuma registracije
-    const profileMemberSince = document.getElementById('profileMemberSince');
-    if (profileMemberSince && userData.created_at) {
-        const date = new Date(userData.created_at);
-        const month = getMonthName(date.getMonth());
-        const year = date.getFullYear();
-        profileMemberSince.textContent = `${month} ${year}`;
-    }
-}
-
-// Dobijanje naziva mjeseca
-function getMonthName(monthIndex) {
-    const months = [
-        'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Juni',
-        'Juli', 'August', 'Septembar', 'Oktobar', 'Novembar', 'Decembar'
-    ];
-    return months[monthIndex];
-}
-
-// Prikaz artikala korisnika
-function renderUserListings(listings) {
-    const container = document.getElementById('user-listings');
+// Prikaz proizvoda na stranici
+function renderProduct(product, isFavorite, isInCart) {
+    const container = document.getElementById('product-detail');
     
     if (!container) return;
     
-    if (listings.length === 0) {
+    if (!product) {
         container.innerHTML = `
-            <div class="empty-listings">
-                <p>Još nemate objavljenih artikala</p>
-                <a href="sell.html" class="button">Dodaj novi artikal</a>
+            <div class="error-message">
+                <p>Proizvod nije pronađen ili je došlo do greške prilikom učitavanja. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
             </div>
         `;
         return;
     }
     
-    let html = '';
+    console.log("Rendering product:", product); // Debugging
     
-    listings.forEach(item => {
-        html += `
-            <div class="product-card" data-id="${item._id}">
-                <div class="product-image">
-                    <a href="product.html?id=${item._id}">
-                        <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" alt="${item.title}">
+    // Parsiranje slika ako su u JSON formatu
+    if (product.images && typeof product.images === 'string') {
+        try {
+            product.images = JSON.parse(product.images);
+            console.log("Parsed images:", product.images);
+        } catch (e) {
+            console.error("Error parsing images:", e);
+            product.images = [];
+        }
+    }
+    
+    // Osigurajmo da je images niz
+    if (!Array.isArray(product.images)) {
+        product.images = product.images ? [product.images] : [];
+    }
+    
+    // Formatiranje cijene
+    const formattedPrice = parseFloat(product.price).toFixed(2);
+    
+    // Provjera postoji li placeholder slika, koristimo online placeholder
+    const onlinePlaceholder = 'https://via.placeholder.com/400x300?text=No+Image';
+    
+    // Priprema HTML-a za galeriju slika
+    let imagesHTML = '';
+    if (product.images && product.images.length > 0) {
+        imagesHTML = `
+            <div class="product-main-image">
+                <img src="${product.images[0]}" alt="${product.title}" id="mainImage"
+                     onerror="this.onerror=null; this.src='${onlinePlaceholder}';">
+            </div>
+            ${product.images.length > 1 ? `
+            <div class="product-thumbnails">
+                ${product.images.map((img, index) => `
+                    <div class="thumbnail ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        <img src="${img}" alt="${product.title} - slika ${index + 1}"
+                             onerror="this.onerror=null; this.src='${onlinePlaceholder}';">
+                    </div>
+                `).join('')}
+            </div>` : ''}
+        `;
+    } else {
+        imagesHTML = `
+            <div class="product-main-image">
+                <img src="${onlinePlaceholder}" alt="${product.title}" id="mainImage">
+            </div>
+        `;
+    }
+    
+    // Dobivanje naziva kategorije
+    const categoryName = getCategoryName(product.category);
+    
+    // Formatiranje datuma
+    let formattedDate = "Nije dostupno";
+    if (product.created_at || product.createdAt || product.updated_at || product.updatedAt) {
+        const dateCreated = new Date(product.created_at || product.createdAt || product.updated_at || product.updatedAt);
+        formattedDate = `${dateCreated.getDate()}.${dateCreated.getMonth() + 1}.${dateCreated.getFullYear()}.`;
+    }
+    
+    // Provjera je li trenutni korisnik vlasnik artikla
+    const currentUserId = localStorage.getItem('userId');
+    const isCurrentUserSeller = currentUserId === product.user_id;
+    const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Učitavanje...');
+    
+    // HTML za korisnika
+    const sellerHtml = `
+    <div class="seller-info">
+        <h2>Korisnik</h2>
+        <div class="seller-profile">
+            <div class="seller-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="seller-details">
+                <div class="seller-name">
+                    <a href="index.html?seller=${product.user_id}" class="seller-link" id="seller-name-link">
+                        ${sellerName}
                     </a>
-                    <div class="product-actions">
-                        <button class="edit-btn" data-id="${item._id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="delete-btn" data-id="${item._id}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
                 </div>
-                <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id}">${item.title}</a></h3>
-                    <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
-                    <div class="product-meta">
-                        <span class="product-size">${item.size}</span>
-                        <span class="product-category">${getCategoryName(item.category)}</span>
-                    </div>
-                    <div class="product-status">
-                        <span class="status-badge ${item.status === 'active' ? 'active' : 'draft'}">
-                            ${item.status === 'active' ? 'Objavljeno' : 'Nacrt'}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-    
-    // Dodavanje event listenera za dugmad
-    document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            window.location.href = `edit-listing.html?id=${id}`;
-        });
-    });
-    
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            deleteArticle(id);
-        });
-    });
-}
-
-// Prikaz omiljenih artikala korisnika
-function renderUserFavorites(favorites) {
-    const container = document.getElementById('user-favorites');
-    
-    if (!container) return;
-    
-    if (favorites.length === 0) {
-        container.innerHTML = `
-            <div class="empty-favorites">
-                <p>Nemate nijedan artikal među favoritima</p>
-                <a href="index.html" class="button">Pregledaj artikle</a>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    
-    favorites.forEach(item => {
-        html += `
-            <div class="product-card" data-id="${item._id}">
-                <div class="product-image">
-                    <a href="product.html?id=${item._id}">
-                        <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" alt="${item.title}">
+                <div class="seller-location">${product.location || 'Nije navedeno'}</div>
+                <div class="seller-products">
+                    <a href="index.html?seller=${product.user_id}" class="seller-products-link">
+                        Pogledajte sve artikle ovog korisnika
                     </a>
-                    <div class="product-actions">
-                        <button class="favorite-btn active" data-id="${item._id}">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                        <button class="cart-btn ${item.inCart ? 'active' : ''}" data-id="${item._id}">
-                            <i class="fa${item.inCart ? 's' : 'r'} fa-shopping-bag"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id}">${item.title}</a></h3>
-                    <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
-                    <div class="product-meta">
-                        <span class="product-size">${item.size}</span>
-                        <span class="product-category">${getCategoryName(item.category)}</span>
-                    </div>
                 </div>
             </div>
-        `;
-    });
+        </div>
+    </div>
+    `;
     
-    container.innerHTML = html;
-    
-    // Dodavanje event listenera za dugmad
-    document.querySelectorAll('.favorite-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            removeFromFavorites(id);
-        });
-    });
-    
-    document.querySelectorAll('.cart-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            toggleCart(id);
-        });
-    });
-}
-
-// Prikaz narudžbi korisnika
-function renderUserOrders(orders) {
-    const container = document.getElementById('user-orders');
-    
-    if (!container) return;
-    
-    if (orders.length === 0) {
-        container.innerHTML = `
-            <div class="empty-orders">
-                <p>Nemate nijednu narudžbu</p>
-                <a href="index.html" class="button">Pregledaj artikle</a>
+    // Generiranje HTML-a za prikaz proizvoda
+    container.innerHTML = `
+        <div class="product-gallery">
+            ${imagesHTML}
+        </div>
+        <div class="product-info">
+            <h1 class="product-title">${product.title}</h1>
+            <div class="product-price">${formattedPrice} KM</div>
+            
+            <div class="product-actions">
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
+                    <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
+                    <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
+                </button>
+                <button class="cart-btn ${isInCart ? 'active' : ''}" id="cartBtn">
+                    <i class="fa${isInCart ? 's' : 'r'} fa-shopping-bag"></i>
+                    <span>${isInCart ? 'Ukloni iz korpe' : 'Dodaj u korpu'}</span>
+                </button>
             </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    
-    orders.forEach(order => {
-        // Formatiranje datuma
-        const orderDate = new Date(order.created_at);
-        const formattedDate = `${orderDate.getDate()}.${orderDate.getMonth() + 1}.${orderDate.getFullYear()}.`;
-        
-        html += `
-            <div class="order-item" data-id="${order._id}">
-                <div class="order-header">
-                    <div class="order-number">Narudžba #${order.order_number}</div>
-                    <div class="order-date">${formattedDate}</div>
-                    <div class="order-status ${order.status.toLowerCase()}">${getOrderStatusName(order.status)}</div>
+            
+            <div class="product-metadata">
+                <div class="metadata-item">
+                    <span class="metadata-label">Kategorija:</span>
+                    <span class="metadata-value">
+                        <a href="index.html?category=${product.category}">${categoryName}</a>
+                    </span>
                 </div>
-                <div class="order-products">
-                    ${order.items.map(item => `
-                        <div class="order-product">
-                            <div class="product-image">
-                                <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.title}">
-                            </div>
-                            <div class="product-details">
-                                <div class="product-title">${item.title}</div>
-                                <div class="product-meta">
-                                    <span class="product-size">Veličina: ${item.size}</span>
-                                    <span class="product-price">Cijena: ${parseFloat(item.price).toFixed(2)} KM</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
+                <div class="metadata-item">
+                    <span class="metadata-label">Veličina:</span>
+                    <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
                 </div>
-                <div class="order-total">
-                    <span>Ukupno:</span>
-                    <span class="total-price">${parseFloat(order.total_price).toFixed(2)} KM</span>
+                <div class="metadata-item">
+                    <span class="metadata-label">Sezona:</span>
+                    <span class="metadata-value">
+                        <a href="index.html?season=${product.season}">${getSeasonName(product.season)}</a>
+                    </span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Stanje:</span>
+                    <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
+                </div>
+                ${product.brand ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Brend:</span>
+                    <span class="metadata-value">
+                        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+                    </span>
+                </div>` : ''}
+                ${product.color ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Boja:</span>
+                    <span class="metadata-value">${product.color}</span>
+                </div>` : ''}
+                ${product.location ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Lokacija:</span>
+                    <span class="metadata-value">${product.location}</span>
+                </div>` : ''}
+                <div class="metadata-item">
+                    <span class="metadata-label">Objavljeno:</span>
+                    <span class="metadata-value">${formattedDate}</span>
                 </div>
             </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-// Funkcija za brisanje artikla
-async function deleteArticle(id) {
-    if (!confirm('Da li ste sigurni da želite obrisati ovaj artikal?')) {
-        return;
-    }
-    
-    try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/articles/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom brisanja artikla');
-        }
-        
-        // Ažuriranje lokalnih podataka
-        userListings = userListings.filter(item => item._id !== id);
-        
-        // Ažuriranje prikaza
-        renderUserListings(userListings);
-        
-        // Ažuriranje broja artikala
-        const profileItemCount = document.getElementById('profileItemCount');
-        if (profileItemCount) {
-            profileItemCount.textContent = `${userListings.length} artikala`;
-        }
-        
-        // Prikaži poruku o uspjehu
-        showMessage('Artikal je uspješno obrisan.', 'success');
-        
-    } catch (error) {
-        console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom brisanja artikla.', 'error');
-    }
-}
-
-// Funkcija za uklanjanje artikla iz favorita
-async function removeFromFavorites(id) {
-    try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/favorites/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom uklanjanja artikla iz favorita');
-        }
-        
-        // Ažuriranje lokalnih podataka
-        userFavorites = userFavorites.filter(item => item._id !== id);
-        
-        // Ažuriranje prikaza
-        renderUserFavorites(userFavorites);
-        
-        // Prikaži poruku o uspjehu
-        showMessage('Artikal je uklonjen iz favorita.', 'success');
-        
-    } catch (error) {
-        console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom uklanjanja artikla iz favorita.', 'error');
-    }
-}
-
-// Funkcija za dodavanje/uklanjanje iz korpe
-async function toggleCart(id) {
-    const button = document.querySelector(`.cart-btn[data-id="${id}"]`);
-    const isInCart = button.classList.contains('active');
-    
-    try {
-        // Dohvaćanje tokena iz localStorage-a
-        const token = localStorage.getItem('authToken');
-        
-        const response = await fetch(`/api/cart/${id}`, {
-            method: isInCart ? 'DELETE' : 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Greška prilikom ažuriranja korpe');
-        }
-        
-        // Ažuriranje UI-a
-        button.classList.toggle('active');
-        const icon = button.querySelector('i');
-        if (isInCart) {
-            icon.classList.replace('fas', 'far');
-            showMessage('Artikal je uklonjen iz korpe.', 'success');
-        } else {
-            icon.classList.replace('far', 'fas');
-            showMessage('Artikal je dodan u korpu.', 'success');
-        }
-        
-        // Ažuriranje lokalnih podataka
-        const item = userFavorites.find(item => item._id === id);
-        if (item) {
-            item.inCart = !isInCart;
-        }
-        
-    } catch (error) {
-        console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom ažuriranja korpe.', 'error');
-    }
-}
-
-// Dobijanje naziva kategorije na osnovu koda
-function getCategoryName(categoryCode) {
-    const categories = {
-        'musko': 'Muško',
-        'zensko': 'Žensko',
-        'djecije': 'Dječije',
-        'jakne': 'Jakne',
-        'duksevi': 'Duksevi',
-        'majice': 'Majice',
-        'jeans': 'Jeans',
-        'sorcevi': 'Šorcevi',
-        'kosulje': 'Košulje i bluze',
-        'handmade': 'Handmade',
-        'starine': 'Starine',
-        'ostalo': 'Ostalo'
-    };
-    
-    return categories[categoryCode] || categoryCode;
-}
-
-// Dobijanje naziva statusa narudžbe
-function getOrderStatusName(statusCode) {
-    const statuses = {
-        'pending': 'Na čekanju',
-        'processing': 'U obradi',
-        'shipped': 'Poslano',
-        'delivered': 'Dostavljeno',
-        'cancelled': 'Otkazano'
-    };
-    
-    return statuses[statusCode] || statusCode;
-}
-
-// Inicijalizacija tabova
-function initializeTabs() {
-    const profileTabs = document.querySelectorAll('.profile-tab');
-    const profileSections = document.querySelectorAll('.profile-section');
-    
-    // Provjera ima li hash u URL-u (npr. #favorites)
-    const hash = window.location.hash.substring(1);
-    if (hash && ['listings', 'favorites', 'orders'].includes(hash)) {
-        activeTab = hash;
-        
-        // Ažuriranje aktivnog taba
-        profileTabs.forEach(tab => {
-            tab.classList.remove('active');
-            if (tab.getAttribute('data-tab') === activeTab) {
-                tab.classList.add('active');
-            }
-        });
-        
-        // Ažuriranje aktivne sekcije
-        profileSections.forEach(section => {
-            section.classList.remove('active');
-            if (section.id === `${activeTab}-section`) {
-                section.classList.add('active');
-            }
-        });
-    }
-    
-    // Dodavanje event listenera za tabove
-    profileTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
             
-            // Ažuriranje aktivnog taba
-            activeTab = tabName;
+            <div class="product-description">
+                <h2>Opis</h2>
+                <div class="description-content">
+                    ${product.description || 'Nema opisa za ovaj proizvod.'}
+                </div>
+            </div>
             
-            // Ažuriranje hash-a u URL-u
-            window.location.hash = activeTab;
-            
-            // Ukloni active klasu sa svih tabova i sekcija
-            profileTabs.forEach(t => t.classList.remove('active'));
-            profileSections.forEach(s => s.classList.remove('active'));
-            
-            // Dodaj active klasu na odabrani tab i sekciju
-            this.classList.add('active');
-            document.getElementById(`${tabName}-section`).classList.add('active');
-        });
-    });
-}
-
-function initializeLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
+            ${sellerHtml}
+        </div>
+    `;
     
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('Jeste li sigurni da se želite odjaviti?')) {
-                localStorage.removeItem('prijavljeniKorisnik');
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userId');
-                window.location.href = 'index.html';
+    // Dodavanje event listenera za thumbnailove (ako postoje)
+    if (product.images && product.images.length > 1) {
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+            thumb.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                const mainImage = document.getElementById('mainImage');
+                mainImage.src = product.images[index];
+                mainImage.onerror = function() {
+                    this.onerror = null;
+                    this.src = onlinePlaceholder;
+                };
+                
+                // Ažuriranje aktivnog thumbnaila
+                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    }
+    
+    // Event listener za dugme za favorite
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', async function() {
+            try {
+                await toggleFavorite();
+            } catch (e) {
+                console.error("Error toggling favorite:", e);
+                alert("Ova funkcionalnost trenutno nije dostupna.");
+            }
+        });
+    }
+    
+    // Event listener za dugme za korpu
+    const cartBtn = document.getElementById('cartBtn');
+    if (cartBtn) {
+        cartBtn.addEventListener('click', async function() {
+            try {
+                await toggleCart();
+            } catch (e) {
+                console.error("Error toggling cart:", e);
+                alert("Ova funkcionalnost trenutno nije dostupna.");
+            }
+        });
+    }
+    
+    // Inicijalizacija hamburger menija
+    initHamburgerMenu();
+    
+    // Provjera korisničke sesije
+    checkUserLoggedIn();
+    
+    // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
+    if (product.user_id && !isCurrentUserSeller) {
+        fetchUserInfo(product.user_id).then(userData => {
+            if (userData) {
+                const sellerNameLink = document.getElementById('seller-name-link');
+                if (sellerNameLink) {
+                    sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
+                }
             }
         });
     }
 }
 
 // Inicijalizacija hamburger menija
-function initializeHamburgerMenu() {
+function initHamburgerMenu() {
     const hamburgerIcon = document.getElementById('hamburgerIcon');
     const menuDropdown = document.getElementById('menuDropdown');
     
     if (hamburgerIcon && menuDropdown) {
-        hamburgerIcon.addEventListener('click', function() {
+        hamburgerIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Spriječava propagaciju događaja
+            console.log('Hamburger kliknut');
             this.classList.toggle('active');
             menuDropdown.classList.toggle('show');
         });
         
         // Zatvaranje menija klikom izvan
         document.addEventListener('click', function(e) {
-            if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+            if (hamburgerIcon && menuDropdown && 
+                !hamburgerIcon.contains(e.target) && 
+                !menuDropdown.contains(e.target)) {
                 hamburgerIcon.classList.remove('active');
                 menuDropdown.classList.remove('show');
             }
@@ -644,46 +366,198 @@ function initializeHamburgerMenu() {
     }
 }
 
-// Prikaz poruke
-function showMessage(message, type = 'info') {
-    // Provjeri postoji li već element za poruke
-    let messageContainer = document.getElementById('message-container');
+// Provjera je li korisnik prijavljen
+function checkUserLoggedIn() {
+    const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+    const sellButton = document.getElementById('sellButton');
+    const profileLink = document.getElementById('profileLink');
     
-    if (!messageContainer) {
-        // Ako ne postoji, kreiraj ga
-        messageContainer = document.createElement('div');
-        messageContainer.id = 'message-container';
-        document.body.appendChild(messageContainer);
-    }
-    
-    // Kreiraj element za poruku
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${type}`;
-    messageElement.innerHTML = message;
-    
-    // Dodaj poruku u kontejner
-    messageContainer.appendChild(messageElement);
-    
-    // Postavi timeout za uklanjanje poruke
-    setTimeout(() => {
-        messageElement.classList.add('hide');
-        setTimeout(() => {
-            messageElement.remove();
-        }, 500);
-    }, 3000);
+    if (prijavljeniKorisnik) {
+        // Ako je korisnik prijavljen,promijeni link "Prodaj svoju odjeću" da vodi na sell.html
+       if (sellButton) sellButton.href = 'sell.html';
+       
+       // Prikaži link za profil
+       if (profileLink) profileLink.style.display = 'block';
+   } else {
+       // Ako korisnik nije prijavljen, link "Prodaj svoju odjeću" vodi na register.html
+       if (sellButton) sellButton.href = 'register.html';
+       
+       // Sakrij link za profil
+       if (profileLink) profileLink.style.display = 'none';
+   }
+}
+
+// Funkcija za dodavanje/uklanjanje proizvoda iz favorita
+async function toggleFavorite() {
+   if (!currentProduct) return;
+   
+   const favoriteBtn = document.getElementById('favoriteBtn');
+   const isFavorite = favoriteBtn.classList.contains('active');
+   
+   try {
+       // Poziv API-ja za dodavanje/uklanjanje iz favorita
+       const response = await fetch(`/api/favorites/${currentProduct._id || currentProduct.id}`, {
+           method: isFavorite ? 'DELETE' : 'POST',
+           headers: {
+               'Content-Type': 'application/json'
+           }
+       });
+       
+       if (!response.ok) {
+           throw new Error('Greška prilikom ažuriranja favorita');
+       }
+       
+       // Ažuriranje UI-a
+       favoriteBtn.classList.toggle('active');
+       const icon = favoriteBtn.querySelector('i');
+       const text = favoriteBtn.querySelector('span');
+       
+       if (isFavorite) {
+           icon.classList.replace('fas', 'far');
+           text.textContent = 'Dodaj u favorite';
+       } else {
+           icon.classList.replace('far', 'fas');
+           text.textContent = 'Ukloni iz favorita';
+       }
+       
+   } catch (error) {
+       console.error('Greška:', error);
+       alert('Došlo je do greške prilikom ažuriranja favorita.');
+   }
+}
+
+// Funkcija za dodavanje/uklanjanje proizvoda iz korpe
+async function toggleCart() {
+   if (!currentProduct) return;
+   
+   const cartBtn = document.getElementById('cartBtn');
+   const isInCart = cartBtn.classList.contains('active');
+   
+   try {
+       // Poziv API-ja za dodavanje/uklanjanje iz korpe
+       const response = await fetch(`/api/cart/${currentProduct._id || currentProduct.id}`, {
+           method: isInCart ? 'DELETE' : 'POST',
+           headers: {
+               'Content-Type': 'application/json'
+           }
+       });
+       
+       if (!response.ok) {
+           throw new Error('Greška prilikom ažuriranja korpe');
+       }
+       
+       // Ažuriranje UI-a
+       cartBtn.classList.toggle('active');
+       const icon = cartBtn.querySelector('i');
+       const text = cartBtn.querySelector('span');
+       
+       if (isInCart) {
+           icon.classList.replace('fas', 'far');
+           text.textContent = 'Dodaj u korpu';
+       } else {
+           icon.classList.replace('far', 'fas');
+           text.textContent = 'Ukloni iz korpe';
+       }
+       
+   } catch (error) {
+       console.error('Greška:', error);
+       alert('Došlo je do greške prilikom ažuriranja korpe.');
+   }
+}
+
+// Dobijanje naziva kategorije na osnovu koda
+function getCategoryName(categoryCode) {
+   const categories = {
+       'musko': 'Muško',
+       'zensko': 'Žensko',
+       'djecije': 'Dječije',
+       'jakne': 'Jakne',
+       'duksevi': 'Duksevi',
+       'majice': 'Majice',
+       'jeans': 'Jeans',
+       'sorcevi': 'Šorcevi',
+       'kosulje': 'Košulje i bluze',
+       'handmade': 'Handmade',
+       'starine': 'Starine',
+       'ostalo': 'Ostalo'
+   };
+   
+   return categories[categoryCode] || categoryCode || 'Nije navedeno';
+}
+
+// Dobijanje naziva sezone na osnovu koda
+function getSeasonName(seasonCode) {
+   const seasons = {
+       'proljece': 'Proljeće',
+       'ljeto': 'Ljeto',
+       'jesen': 'Jesen',
+       'zima': 'Zima',
+       'sve': 'Sva godišnja doba'
+   };
+   
+   return seasons[seasonCode] || seasonCode || 'Nije navedeno';
+}
+
+// Dobijanje naziva stanja na osnovu koda
+function getConditionName(conditionCode) {
+   const conditions = {
+       'novo': 'Novo sa etiketom',
+       'kao-novo': 'Kao novo',
+       'veoma-dobro': 'Veoma dobro',
+       'dobro': 'Dobro',
+       'prihvatljivo': 'Prihvatljivo'
+   };
+   
+   return conditions[conditionCode] || conditionCode || 'Nije navedeno';
 }
 
 // Inicijalizacija stranice
 document.addEventListener('DOMContentLoaded', async function() {
-    // Provjera je li korisnik prijavljen
-    userData = checkUserLoggedIn();
-    if (!userData) return;
-    
-    // Inicijalizacija UI komponenti
-    initializeTabs();
-    initializeLogout();
-    initializeHamburgerMenu();
-    
-    // Učitavanje i prikaz podataka
-    await initializeProfile();
+   // Dohvatanje ID-a proizvoda iz URL-a
+   productId = getProductIdFromUrl();
+   
+   console.log("Product ID from URL:", productId); // Debugging
+   
+   if (!productId) {
+       // Ako nema ID-a, prikaži poruku o grešci
+       document.getElementById('product-detail').innerHTML = `
+           <div class="error-message">
+               <p>Proizvod nije pronađen. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
+           </div>
+       `;
+       return;
+   }
+   
+   // Dohvatanje proizvoda
+   const product = await fetchProduct(productId);
+   
+   if (!product) {
+       document.getElementById('product-detail').innerHTML = `
+           <div class="error-message">
+               <p>Proizvod nije pronađen ili server nije dostupan. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
+           </div>
+       `;
+       return;
+   }
+   
+   // Spremanje proizvoda u globalnu varijablu
+   currentProduct = product;
+   
+   // Dohvatanje statusa favorita i korpe
+   let isFavorite = false;
+   let isInCart = false;
+   
+   try {
+       isFavorite = await fetchFavoriteStatus(productId);
+       isInCart = await fetchCartStatus(productId);
+   } catch (e) {
+       console.error("Error fetching status:", e);
+       // Nastavi bez statusa ako dohvat nije uspio
+   }
+   
+   // Prikaz proizvoda
+   renderProduct(product, isFavorite, isInCart);
+   
+   // Postavljanje naslova stranice
+   document.title = `${product.title} - Vintage Thrift Store`;
 });
