@@ -277,7 +277,8 @@ function renderUserListings(listings) {
                     <h3 class="product-title"><a href="product.html?id=${item._id || item.id}">${item.title}</a></h3>
                     <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
                     <div class="product-meta">
-                        <span class="product-size">${item.<span class="product-size">${item.size || 'N/A'}</span>
+                      <span class="product-size">${item.size || 'N/A'}</span>
+<span class="product-category">${getCategoryName(item.category)}</span>
                         <span class="product-category">${getCategoryName(item.category)}</span>
                     </div>
                     <div class="product-status">
