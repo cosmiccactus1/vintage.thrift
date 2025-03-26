@@ -519,7 +519,7 @@ function getConditionName(conditionCode) {
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
         
-        // Postavljanje naslova stranice
-        document.title = `${product.title} - Vintage Thrift Store`;
-    });
-}
+       // Postavljanje naslova stranice
+    document.title = `${product.title} - Vintage Thrift Store`;
+  });
+} // <- ova zagrada zatvara else blok
