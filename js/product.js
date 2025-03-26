@@ -15,12 +15,6 @@
     let productId = null;
     let currentProduct = null;
 
-    // Funkcija za preusmjeravanje na pregled artikala prodavača
-    window.fetchUserArticles = function(userId) {
-        console.log("Preusmjeravanje na artikle prodavača:", userId);
-        window.location.href = `/api/articles/user/${userId}`;
-    };
-
     // Dohvatanje ID-a proizvoda iz URL-a
     function getProductIdFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -234,7 +228,7 @@
                     </div>
                     <div class="seller-location">${product.location || 'Nije navedeno'}</div>
                     <div class="seller-products">
-                        <a href="/api/articles/user/${product.user_id}" class="seller-products-link">
+                        <a href="index.html?seller=${product.user_id}" class="seller-products-link">
                             Pogledajte sve artikle ovog prodavača
                         </a>
                     </div>
