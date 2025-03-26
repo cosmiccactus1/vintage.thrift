@@ -360,7 +360,7 @@ if (product.user_id && !isCurrentUserSeller) {
         }
     });
 }
-
+ }
 // Dobijanje naziva kategorije na osnovu koda
     function getCategoryName(categoryCode) {
         const categories = {
