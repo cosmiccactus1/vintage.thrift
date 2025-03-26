@@ -69,24 +69,30 @@ async function fetchUserInfo(userId) {
     if (!userId) return null;
     
     try {
-        // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
+        const headers = {};
         
-        const response = await fetch(`/api/users/${userId}`, {
-            headers: {
-                'Authorization': token ? `Bearer ${token}` : ''
-            }
-        });
+        // Dodaj token samo ako postoji
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         
-        if (!response.ok) {
-            console.error(`Error fetching user info: ${response.status}`);
+        const response = await fetch(`/api/users/${userId}`, { headers });
+        
+        // Obradi 401 specifično
+        if (response.status === 401) {
+            console.log('Korisnik nije prijavljen, preskačemo dohvat detalja');
             return null;
         }
         
-        const userData = await response.json();
-        return userData;
+        if (!response.ok) {
+            console.error(`Greška ${response.status} pri dohvatu korisnika`);
+            return null;
+        }
+        
+        return await response.json();
     } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('Greška:', error);
         return null;
     }
 }
