@@ -365,8 +365,8 @@ if (!document.getElementById('product-detail')) {
         return seasons[seasonCode] || seasonCode || 'Nije navedeno';
     }
 
-    // Dobijanje naziva stanja na osnovu koda
-   function getConditionName(conditionCode) {
+   // Dobijanje naziva stanja na osnovu koda
+function getConditionName(conditionCode) {
     const conditions = {
         'novo': 'Novo sa etiketom',
         'kao-novo': 'Kao novo',
@@ -377,7 +377,6 @@ if (!document.getElementById('product-detail')) {
     
     return conditions[conditionCode] || conditionCode || 'Nije navedeno';
 }
-    }
 
     // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
     async function toggleFavorite() {
