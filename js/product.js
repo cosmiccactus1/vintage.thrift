@@ -15,6 +15,12 @@
     let productId = null;
     let currentProduct = null;
 
+    // Funkcija za preusmjeravanje na pregled artikala prodavača
+    window.fetchUserArticles = function(userId) {
+        console.log("Preusmjeravanje na artikle prodavača:", userId);
+        window.location.href = `/api/articles/user/${userId}`;
+    };
+
     // Dohvatanje ID-a proizvoda iz URL-a
     function getProductIdFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -65,37 +71,41 @@
     }
 
    // Dohvaćanje informacija o korisniku
-async function fetchUserInfo(userId) {
-    if (!userId) return null;
-    
-    try {
-        const token = localStorage.getItem('authToken');
-        const headers = {};
+    async function fetchUserInfo(userId) {
+        if (!userId) return null;
         
-        // Dodaj token samo ako postoji
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(`/api/users/${userId}`, { headers });
-        
-        // Obradi 401 specifično
-        if (response.status === 401) {
-            console.log('Korisnik nije prijavljen, preskačemo dohvat detalja');
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            
+            // Dodaj token samo ako postoji
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            const response = await fetch(`/api/users/${userId}`, { headers });
+            
+            // Obradi 401 specifično
+            if (response.status === 401) {
+                console.log('Korisnik nije prijavljen, preskačemo dohvat detalja');
+                return null;
+            }
+            
+            if (!response.ok) {
+                console.error(`Greška ${response.status} pri dohvatu korisnika`);
+                return null;
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Greška:', error);
             return null;
         }
-        
-        if (!response.ok) {
-            console.error(`Greška ${response.status} pri dohvatu korisnika`);
-            return null;
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Greška:', error);
-        return null;
     }
-}
+
     // Provjera statusa favorita za proizvod
     async function fetchFavoriteStatus(id) {
         try {
@@ -213,21 +223,18 @@ async function fetchUserInfo(userId) {
         // HTML za prodavača
         const sellerHtml = `
         <div class="seller-info">
-            <h2>Korisnik</h2>
+            <h2>Prodavač</h2>
             <div class="seller-profile">
                 <div class="seller-avatar">
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="seller-details">
                     <div class="seller-name">
-                        <a href="index.html" class="seller-products-link" onclick="fetchUserArticles('${product.user_id}'); return false;">
-  Pogledajte sve artikle ovog prodavača
-</a>
-                        </a>
+                        <span id="seller-name-link">${sellerName}</span>
                     </div>
                     <div class="seller-location">${product.location || 'Nije navedeno'}</div>
                     <div class="seller-products">
-                        <a href="index.html?seller=${product.user_id}" class="seller-products-link">
+                        <a href="/api/articles/user/${product.user_id}" class="seller-products-link">
                             Pogledajte sve artikle ovog prodavača
                         </a>
                     </div>
@@ -352,27 +359,29 @@ async function fetchUserInfo(userId) {
             });
         }
         
-      // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
-if (product.user_id && !isCurrentUserSeller) {
-    console.log("Dohvaćam informacije za korisnika s ID:", product.user_id);
-    fetchUserInfo(product.user_id).then(userData => {
-        console.log("Dohvaćeni podaci korisnika:", userData);
-        if (userData) {
-            const sellerNameLink = document.getElementById('seller-name-link');
-            if (sellerNameLink) {
-                sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
-            }
-        } else {
-            console.log("Nije moguće dohvatiti podatke o korisniku");
+        // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
+        if (product.user_id && !isCurrentUserSeller) {
+            console.log("Dohvaćam informacije za korisnika s ID:", product.user_id);
+            fetchUserInfo(product.user_id).then(userData => {
+                console.log("Dohvaćeni podaci korisnika:", userData);
+                if (userData) {
+                    const sellerNameLink = document.getElementById('seller-name-link');
+                    if (sellerNameLink) {
+                        sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
+                    }
+                } else {
+                    console.log("Nije moguće dohvatiti podatke o korisniku");
+                }
+            });
         }
-    });
-}
- }
-// Dobijanje naziva kategorije na osnovu koda
+    }
+    
+    // Dobijanje naziva kategorije na osnovu koda
     function getCategoryName(categoryCode) {
         const categories = {
             'musko': 'Muško',
             'zensko': 'Žensko',
+            'unisex': 'Unisex',
             'djecije': 'Dječije',
             'jakne': 'Jakne',
             'duksevi': 'Duksevi',
