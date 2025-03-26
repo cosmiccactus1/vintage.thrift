@@ -80,11 +80,6 @@ module.exports = async (req, res) => {
     // Provjera autentikacije
     const authUserId = await verifyToken(req);
     
-    if (!authUserId) {
-      res.status(401).json({ message: 'Nije autorizovano' });
-      return;
-    }
-    
     // GET zahtjevi za dohvaćanje korisnika
     if (req.method === 'GET') {
       const userId = extractUserId(req);
@@ -97,15 +92,21 @@ module.exports = async (req, res) => {
       }
       
       // Provjera je li korisnik traži svoje podatke ili tuđe
-      if (userId !== authUserId && userId !== 'me') {
-        // Ovdje možeš dodati provjeru je li korisnik admin
-        // Za sad, dozvoljavamo samo dohvaćanje vlastitih podataka
-        res.status(403).json({ message: 'Nemate dozvolu za pristup ovim podacima' });
-        return;
+      let publicAccess = false;
+      if (!authUserId || (userId !== authUserId && userId !== 'me')) {
+        // Ako korisnik nije prijavljen ili traži tuđe podatke, označimo kao javni pristup
+        publicAccess = true;
+        console.log('Javni pristup za korisnika:', userId);
       }
       
       // Ako je 'me', koristi ID prijavljenog korisnika
-      const idToFetch = userId === 'me' ? authUserId : userId;
+      // U slučaju javnog pristupa, 'me' nema smisla
+      const idToFetch = (publicAccess && userId === 'me') ? null : (userId === 'me' ? authUserId : userId);
+      
+      if (!idToFetch) {
+        res.status(400).json({ message: 'Nepoznat korisnik' });
+        return;
+      }
       
       // Dohvati podatke o korisniku
       const { data: userData, error } = await supabase
@@ -132,8 +133,31 @@ module.exports = async (req, res) => {
       // Ukloni osjetljive podatke
       delete responseData.password;
       
-      console.log('Odgovor za korisnika:', responseData);
-      res.status(200).json(responseData);
+      // Ako je javni pristup, ograniči vidljive podatke
+      if (publicAccess) {
+        // Za javni pristup vraćamo samo osnovne podatke
+        const publicData = {
+          id: responseData.id,
+          _id: responseData._id,
+          username: responseData.username,
+          name: responseData.name || responseData.displayName,
+          displayName: responseData.displayName || responseData.name || responseData.username,
+          // Dodajte druge sigurne javne podatke po potrebi
+          avatar: responseData.avatar || responseData.profileImage
+        };
+        console.log('Javni odgovor za korisnika:', publicData);
+        res.status(200).json(publicData);
+      } else {
+        // Za vlastite podatke, šaljemo sve (osim osjetljivih polja)
+        console.log('Puni odgovor za korisnika:', responseData);
+        res.status(200).json(responseData);
+      }
+      return;
+    }
+    
+    // Za PUT i druge metode koje modificiraju podatke, zahtijevamo autentifikaciju
+    if (!authUserId) {
+      res.status(401).json({ message: 'Nije autorizovano' });
       return;
     }
     
