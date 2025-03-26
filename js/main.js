@@ -38,9 +38,17 @@ async function fetchArtikli() {
     
     // Kreiraj URL s query parametrima
     let url = '/api/articles';
-    if (Object.keys(params).length > 0) {
-      const searchParams = new URLSearchParams(params);
-      url += '?' + searchParams.toString();
+    
+    // Ako postoji seller parametar, koristimo API endpoint za artikle korisnika
+    if (params.seller) {
+      url = `/api/articles/user/${params.seller}`;
+      console.log('Fetching seller articles from URL:', url);
+    } else {
+      // Inače, koristimo standardni endpoint s query parametrima
+      if (Object.keys(params).length > 0) {
+        const searchParams = new URLSearchParams(params);
+        url += '?' + searchParams.toString();
+      }
     }
     
     console.log('Fetching articles from URL:', url);
