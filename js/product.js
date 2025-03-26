@@ -213,15 +213,16 @@ async function fetchUserInfo(userId) {
         // HTML za prodavača
         const sellerHtml = `
         <div class="seller-info">
-            <h2>Prodavač</h2>
+            <h2>Korisnik</h2>
             <div class="seller-profile">
                 <div class="seller-avatar">
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="seller-details">
                     <div class="seller-name">
-                        <a href="index.html?seller=${product.user_id}" class="seller-link" id="seller-name-link">
-                            ${sellerName}
+                        <a href="index.html" class="seller-products-link" onclick="fetchUserArticles('${product.user_id}'); return false;">
+  Pogledajte sve artikle ovog prodavača
+</a>
                         </a>
                     </div>
                     <div class="seller-location">${product.location || 'Nije navedeno'}</div>
