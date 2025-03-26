@@ -72,46 +72,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hamburger menu funkcionalnost
-            const hamburgerIcon = document.getElementById('hamburgerIcon');
-            const menuDropdown = document.getElementById('menuDropdown');
-            
-            if (hamburgerIcon && menuDropdown) {
-                hamburgerIcon.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    menuDropdown.classList.toggle('show');
-                });
-                
-                // Zatvaranje menija klikom izvan
-                document.addEventListener('click', function(e) {
-                    if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
-                        hamburgerIcon.classList.remove('active');
-                        menuDropdown.classList.remove('show');
-                    }
-                });
-            }
-            
-            // Provjera je li korisnik prijavljen
-            const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
-            const sellButton = document.getElementById('sellButton');
-            const profileLink = document.getElementById('profileLink');
-            
-            if (prijavljeniKorisnik) {
-                // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na sell.html
-                sellButton.href = 'sell.html';
-                
-                // Prikaži link za profil
-                profileLink.style.display = 'block';
-            } else {
-                // Ako korisnik nije prijavljen, link "Prodaj svoju odjeću" vodi na register.html
-                sellButton.href = 'register.html';
-                
-                // Sakrij link za profil
-                profileLink.style.display = 'none';
-            }
-        });
-    </script>
 </body>
 </html>
