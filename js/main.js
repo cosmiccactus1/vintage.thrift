@@ -1,6 +1,5 @@
 /**
  * Vintage Thrift Store - Main JavaScript
- * Za rad s API-jem umjesto lokalnih podataka
  */
 
 // Globalne varijable
@@ -35,6 +34,7 @@ async function fetchArtikli() {
   try {
     // Dohvati URL parametre za filtriranje
     const params = getUrlParams();
+    console.log('URL parametri za filtriranje:', params);
     
     // Kreiraj URL s query parametrima
     let url = '/api/articles';
@@ -51,6 +51,7 @@ async function fetchArtikli() {
     }
     
     const data = await response.json();
+    console.log('Dohvaćeni artikli:', data);
     artikli = data;
     filteredArtikli = [...artikli];
     
@@ -63,6 +64,20 @@ async function fetchArtikli() {
       </div>
     `;
   }
+}
+
+// Funkcija za sortiranje artikala
+function sortArtikli(artikli, sortBy) {
+  return [...artikli].sort((a, b) => {
+    if (sortBy === 'price-asc') {
+      return a.price - b.price;
+    } else if (sortBy === 'price-desc') {
+      return b.price - a.price;
+    } else if (sortBy === 'newest') {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    return 0;
+  });
 }
 
 // Prikaz artikala na stranici
@@ -221,15 +236,11 @@ function addProductButtonListeners() {
   });
 }
 
-// Inicijalizacija stranice
-document.addEventListener('DOMContentLoaded', function() {
-  // Inicijalizacija hamburger menija
-  initHamburgerMenu();
-  
-  // Postavljanje aktivnih filtera na osnovu URL parametara
+// Inicijalizacija filtera
+function initFilters() {
+  // Postavi aktivne filtere na osnovu URL parametara
   const params = getUrlParams();
   
-  // Postavi aktivne filtere na osnovu URL parametara
   if (params.category) {
     document.querySelectorAll('.filter-option[data-type]').forEach(option => {
       option.classList.toggle('active', option.getAttribute('data-type') === params.category);
@@ -251,6 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const dataType = this.hasAttribute('data-type') ? 'type' : 'season';
       let filterType = dataType === 'type' ? 'category' : 'season';
       let filterValue = dataType === 'type' ? this.getAttribute('data-type') : this.getAttribute('data-season');
+      
+      console.log(`Filter kliknut: ${filterType} = ${filterValue}`);
       
       // Ažuriranje URL parametra
       updateUrlParam(filterType, filterValue);
@@ -274,11 +287,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
-  
-  // Dohvatanje artikala prilikom učitavanja stranice
-  fetchArtikli();
-  
-  // Provjera je li korisnik prijavljen
+}
+
+// Provjera prijavljenog korisnika
+function checkLoggedInUser() {
   const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
   const sellButton = document.getElementById('sellButton');
   const profileLink = document.getElementById('profileLink');
@@ -296,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sakrij link za profil
     if (profileLink) profileLink.style.display = 'none';
   }
-});
+}
 
 // Hamburger menu funkcionalnost
 function initHamburgerMenu() {
@@ -321,3 +333,18 @@ function initHamburgerMenu() {
     });
   }
 }
+
+// Inicijalizacija stranice
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicijalizacija hamburger menija
+  initHamburgerMenu();
+  
+  // Inicijalizacija filtera
+  initFilters();
+  
+  // Provjera prijavljenog korisnika
+  checkLoggedInUser();
+  
+  // Dohvatanje artikala prilikom učitavanja stranice
+  fetchArtikli();
+});
