@@ -136,46 +136,48 @@ module.exports = async (req, res) => {
     // Parsiranje URL-a za određivanje rute
     const parsedURL = parseURL(req);
     
-   // Dohvaćanje svih artikala
-if (parsedURL.type === 'all_articles') {
-  // Početni query - dohvaćamo samo aktivne artikle
-  let query = supabase
-    .from('articles')
-    .select('*')
-    .eq('status', 'active');
-  
-  // Dodavanje filtera ako postoje u query parametrima
-  if (req.query) {
-    // Filter po kategoriji
-    if (req.query.category && req.query.category !== 'sve') {
-      query = query.eq('category', req.query.category);
-    }
-    
-    // Filter po sezoni
-    if (req.query.season && req.query.season !== 'sve') {
-      query = query.eq('season', req.query.season);
-    }
-    
-    // Filter po brandu
-    if (req.query.brand) {
-      query = query.eq('brand', req.query.brand);
-    }
-  }
-  
-  const { data: articles, error } = await query;
-  
-  if (error) throw error;
-  
-  // Transformacija ID-a za kompatibilnost (id -> _id) i parsiranje images
-  const formattedArticles = articles.map(article => ({
-    ...article,
-    _id: article.id,
-    images: article.images ? JSON.parse(article.images) : []
-  }));
-  
-  res.status(200).json(formattedArticles);
-  return;
-}
+    // GET metoda - dohvaćanje artikala
+    if (req.method === 'GET') {
+      // Dohvaćanje svih artikala
+      if (parsedURL.type === 'all_articles') {
+        // Početni query - dohvaćamo samo aktivne artikle
+        let query = supabase
+          .from('articles')
+          .select('*')
+          .eq('status', 'active');
+        
+        // Dodavanje filtera ako postoje u query parametrima
+        if (req.query) {
+          // Filter po kategoriji
+          if (req.query.category && req.query.category !== 'sve') {
+            query = query.eq('category', req.query.category);
+          }
+          
+          // Filter po sezoni
+          if (req.query.season && req.query.season !== 'sve') {
+            query = query.eq('season', req.query.season);
+          }
+          
+          // Filter po brandu
+          if (req.query.brand) {
+            query = query.eq('brand', req.query.brand);
+          }
+        }
+        
+        const { data: articles, error } = await query;
+        
+        if (error) throw error;
+        
+        // Transformacija ID-a za kompatibilnost (id -> _id) i parsiranje images
+        const formattedArticles = articles.map(article => ({
+          ...article,
+          _id: article.id,
+          images: article.images ? JSON.parse(article.images) : []
+        }));
+        
+        res.status(200).json(formattedArticles);
+        return;
+      }
       
       // Dohvaćanje jednog artikla po ID-u
       if (parsedURL.type === 'single_article') {
