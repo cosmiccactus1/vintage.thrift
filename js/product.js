@@ -366,20 +366,17 @@ if (!document.getElementById('product-detail')) {
     }
 
     // Dobijanje naziva stanja na osnovu koda
-    function getConditionName(conditionCode) {
-        const conditions = {
-            'novo': 'Novo sa etiketom',
-            'kao-novo': 'Kao novo',
-            'veoma-dobro': 'Veoma dobro',
-            'dobro': 'Dobro',
-            ''novo': 'Novo sa etiketom',
-            'kao-novo': 'Kao novo',
-            'veoma-dobro': 'Veoma dobro',
-            'dobro': 'Dobro',
-            'prihvatljivo': 'Prihvatljivo'
-        };
-        
-        return conditions[conditionCode] || conditionCode || 'Nije navedeno';
+   function getConditionName(conditionCode) {
+    const conditions = {
+        'novo': 'Novo sa etiketom',
+        'kao-novo': 'Kao novo',
+        'veoma-dobro': 'Veoma dobro',
+        'dobro': 'Dobro',
+        'prihvatljivo': 'Prihvatljivo'
+    };
+    
+    return conditions[conditionCode] || conditionCode || 'Nije navedeno';
+}
     }
 
     // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
