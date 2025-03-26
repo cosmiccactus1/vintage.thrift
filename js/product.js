@@ -3,10 +3,14 @@
  * Za rad s API-jem umjesto lokalnih podataka
  */
 
-// Provjera jesmo li na pravoj stranici
-if (!document.getElementById('product-detail')) {
-    console.log("Nismo na stranici proizvoda, preskačemo izvršavanje koda.");
-} else {
+// Dodana zaštita za slučaj da dođe do prekida u učitavanju
+(function() {
+    // Provjera jesmo li na pravoj stranici
+    if (!document.getElementById('product-detail')) {
+        console.log("Nismo na stranici proizvoda, preskačemo izvršavanje koda.");
+        return;
+    }
+
     // Globalne varijable
     let productId = null;
     let currentProduct = null;
@@ -23,7 +27,14 @@ if (!document.getElementById('product-detail')) {
             const url = `/api/articles/${id}`;
             console.log("Fetching product from URL:", url);
             
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
             if (!response.ok) {
                 console.error(`Error response: ${response.status} ${response.statusText}`);
                 throw new Error('Greška prilikom dohvatanja proizvoda');
@@ -43,6 +54,12 @@ if (!document.getElementById('product-detail')) {
             return data;
         } catch (error) {
             console.error('Greška:', error);
+            
+            // Detaljnije logovanje tipa greške
+            if (error instanceof TypeError) {
+                console.error("Mrežna greška:", error.message);
+            }
+            
             return null;
         }
     }
@@ -344,7 +361,7 @@ if (product.user_id && !isCurrentUserSeller) {
     });
 }
 
-    // Dobijanje naziva kategorije na osnovu koda
+// Dobijanje naziva kategorije na osnovu koda
     function getCategoryName(categoryCode) {
         const categories = {
             'musko': 'Muško',
@@ -377,18 +394,18 @@ if (product.user_id && !isCurrentUserSeller) {
         return seasons[seasonCode] || seasonCode || 'Nije navedeno';
     }
 
-   // Dobijanje naziva stanja na osnovu koda
-function getConditionName(conditionCode) {
-    const conditions = {
-        'novo': 'Novo sa etiketom',
-        'kao-novo': 'Kao novo',
-        'veoma-dobro': 'Veoma dobro',
-        'dobro': 'Dobro',
-        'prihvatljivo': 'Prihvatljivo'
-    };
-    
-    return conditions[conditionCode] || conditionCode || 'Nije navedeno';
-}
+    // Dobijanje naziva stanja na osnovu koda
+    function getConditionName(conditionCode) {
+        const conditions = {
+            'novo': 'Novo sa etiketom',
+            'kao-novo': 'Kao novo',
+            'veoma-dobro': 'Veoma dobro',
+            'dobro': 'Dobro',
+            'prihvatljivo': 'Prihvatljivo'
+        };
+        
+        return conditions[conditionCode] || conditionCode || 'Nije navedeno';
+    }
 
     // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
     async function toggleFavorite() {
@@ -519,7 +536,7 @@ function getConditionName(conditionCode) {
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
         
-       // Postavljanje naslova stranice
-    document.title = `${product.title} - Vintage Thrift Store`;
-  });
-} // <- ova zagrada zatvara else blok
+        // Postavljanje naslova stranice
+        document.title = `${product.title} - Vintage Thrift Store`;
+    });
+})(); // Kraj IIFE (Immediately Invoked Function Expression)
