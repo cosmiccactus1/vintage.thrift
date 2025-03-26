@@ -1,418 +1,441 @@
 /**
- * Vintage Thrift Store - Enhanced Sell Page JavaScript
- * Improved version with better structure and error handling
+ * Vintage Thrift Store - Sell JavaScript
+ * Za rad s API-jem umjesto lokalnih podataka
  */
 
-class SellPage {
-  constructor() {
-    this.uploadedImages = [];
-    this.init();
-  }
+// Globalne varijable
+let uploadedImages = [];
 
-  async init() {
-    try {
-      this.userData = this.checkUserLoggedIn();
-      if (!this.userData) return;
-
-      console.log('Authenticated user:', this.userData);
-      
-      this.initHamburgerMenu();
-      this.initPhotoUpload();
-      this.initFormEvents();
-      this.loadCategories();
-    } catch (error) {
-      console.error('Initialization error:', error);
-      this.showMessage('Došlo je do greške prilikom inicijalizacije stranice', 'error');
-    }
-  }
-
-  // User authentication
-  checkUserLoggedIn() {
+// Provjera je li korisnik prijavljen
+function checkUserLoggedIn() {
     const userDataString = localStorage.getItem('prijavljeniKorisnik');
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('authToken');
     
     if (!userDataString || !userId || !token) {
-      window.location.href = 'register.html';
-      return null;
+        // Ako korisnik nije prijavljen, preusmjeri na register.html
+        window.location.href = 'register.html';
+        return null;
     }
     
     try {
-      const userData = JSON.parse(userDataString);
-      return { ...userData, id: userId };
+        const userData = JSON.parse(userDataString);
+        return { ...userData, id: userId };
     } catch (error) {
-      console.error('Error parsing user data:', error);
-      window.location.href = 'register.html';
-      return null;
+        console.error('Greška prilikom parsiranja podataka korisnika:', error);
+        window.location.href = 'register.html';
+        return null;
     }
-  }
+}
 
-  // Photo upload functionality
-  initPhotoUpload() {
+// Inicijalizacija opcija za upload fotografija
+function initPhotoUpload() {
     const photoUploadBtn = document.getElementById('photo-upload-btn');
     const photoUploadInput = document.getElementById('photo-upload');
     const photoUploadContainer = document.querySelector('.photo-upload-container');
     
-    if (!photoUploadBtn || !photoUploadInput || !photoUploadContainer) {
-      console.warn('Photo upload elements not found');
-      return;
-    }
+    if (!photoUploadBtn || !photoUploadInput || !photoUploadContainer) return;
     
-    photoUploadBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      photoUploadInput.click();
+    // Klik na dugme za upload
+    photoUploadBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        photoUploadInput.click();
     });
     
-    photoUploadInput.addEventListener('change', (e) => this.handleFileSelection(e));
+    // Promjena input elementa (odabir datoteka)
+    photoUploadInput.addEventListener('change', handleFileSelection);
     
-    // Drag and drop handlers
-    photoUploadContainer.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      photoUploadContainer.classList.add('dragover');
+    // Drag & drop funkcionalnost
+    photoUploadContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
     });
     
-    photoUploadContainer.addEventListener('dragleave', () => {
-      photoUploadContainer.classList.remove('dragover');
+    photoUploadContainer.addEventListener('dragleave', function() {
+        this.classList.remove('dragover');
     });
     
-    photoUploadContainer.addEventListener('drop', (e) => {
-      e.preventDefault();
-      photoUploadContainer.classList.remove('dragover');
-      
-      if (e.dataTransfer.files.length > 0) {
-        photoUploadInput.files = e.dataTransfer.files;
-        this.handleFileSelection({ target: photoUploadInput });
-      }
+    photoUploadContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            photoUploadInput.files = files;
+            handleFileSelection({ target: photoUploadInput });
+        }
     });
-  }
+}
 
-  handleFileSelection(e) {
+// Obrađivanje odabira datoteka
+function handleFileSelection(e) {
     const files = e.target.files;
     const uploadedPhotosContainer = document.getElementById('uploaded-photos');
     
     if (!files || !uploadedPhotosContainer) return;
     
-    // Validate files
+    // Ograničenje na 5 slika
     if (files.length > 5) {
-      this.showMessage('Možete uploadovati maksimalno 5 slika.', 'error');
-      return;
+        showMessage('Možete uploadovati maksimalno 5 slika.', 'error');
+        return;
     }
     
-    // Reset container and array
+    // Čišćenje prethodno prikazanih slika
     uploadedPhotosContainer.innerHTML = '';
-    this.uploadedImages = [];
+    uploadedImages = [];
     
-    Array.from(files).forEach((file, index) => {
-      if (!file.type.startsWith('image/')) {
-        this.showMessage('Možete uploadovati samo slike.', 'error');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        this.showMessage('Slika ne smije biti veća od 5MB.', 'error');
-        return;
-      }
-      
-      this.uploadedImages.push(file);
-      this.createImagePreview(file, index, uploadedPhotosContainer);
-    });
-  }
-
-  createImagePreview(file, index, container) {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const photoContainer = document.createElement('div');
-      photoContainer.className = 'uploaded-photo';
-      
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.alt = 'Uploaded photo preview';
-      
-      const removeBtn = document.createElement('div');
-      removeBtn.className = 'remove-photo';
-      removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-      removeBtn.dataset.index = index;
-      removeBtn.addEventListener('click', () => this.removeImage(index, photoContainer));
-      
-      photoContainer.append(img, removeBtn);
-      container.appendChild(photoContainer);
-    };
-    
-    reader.readAsDataURL(file);
-  }
-
-  removeImage(index, container) {
-    this.uploadedImages.splice(index, 1);
-    container.remove();
-    
-    // Update remaining buttons' indices
-    document.querySelectorAll('.remove-photo').forEach((btn, idx) => {
-      if (idx >= index) {
-        btn.dataset.index = idx;
-      }
-    });
-  }
-
-  // Form handling
-  initFormEvents() {
-    const saveDraftBtn = document.getElementById('save-draft-btn');
-    const form = document.getElementById('prodaj-form');
-    
-    if (saveDraftBtn) {
-      saveDraftBtn.addEventListener('click', () => this.saveAsDraft());
-    }
-    
-    if (form) {
-      form.addEventListener('submit', (e) => this.publishArticle(e));
-    }
-    
-    // Clear error states on input
-    document.querySelectorAll('input, select, textarea').forEach(field => {
-      field.addEventListener('input', () => {
-        field.classList.remove('error');
-        const errorMsg = field.parentNode.querySelector('.error-message');
-        if (errorMsg) errorMsg.remove();
-      });
-    });
-  }
-
-  async loadCategories() {
-    try {
-      const response = await fetch('/api/categories');
-      if (!response.ok) throw new Error('Failed to load categories');
-      
-      const categories = await response.json();
-      this.populateCategoryDropdowns(categories);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      this.showMessage('Došlo je do greške prilikom učitavanja kategorija', 'error');
-    }
-  }
-
-  populateCategoryDropdowns(categories) {
-    const mainCatSelect = document.getElementById('main-category');
-    const subCatSelect = document.getElementById('subcategory');
-    
-    if (mainCatSelect) {
-      // Clear existing options except the first one
-      while (mainCatSelect.options.length > 1) {
-        mainCatSelect.remove(1);
-      }
-      
-      // Add main categories
-      categories.main.forEach(cat => {
-        const option = new Option(cat.name, cat.id);
-        mainCatSelect.add(option);
-      });
-      
-      // Add event listener for subcategory loading
-      mainCatSelect.addEventListener('change', () => {
-        this.loadSubcategories(mainCatSelect.value);
-      });
-    }
-    
-    if (subCatSelect) {
-      // Initial subcategories load if main category is preselected
-      if (mainCatSelect && mainCatSelect.value) {
-        this.loadSubcategories(mainCatSelect.value);
-      }
-    }
-  }
-
-  async loadSubcategories(mainCategoryId) {
-    const subCatSelect = document.getElementById('subcategory');
-    if (!subCatSelect) return;
-    
-    try {
-      const response = await fetch(`/api/categories/${mainCategoryId}/subcategories`);
-      if (!response.ok) throw new Error('Failed to load subcategories');
-      
-      const subcategories = await response.json();
-      
-      // Clear existing options except the first one
-      while (subCatSelect.options.length > 1) {
-        subCatSelect.remove(1);
-      }
-      
-      // Add new subcategories
-      subcategories.forEach(subcat => {
-        const option = new Option(subcat.name, subcat.id);
-        subCatSelect.add(option);
-      });
-    } catch (error) {
-      console.error('Error loading subcategories:', error);
-    }
-  }
-
-  validateForm() {
-    let isValid = true;
-    const form = document.getElementById('prodaj-form');
-    
-    // Clear previous errors
-    document.querySelectorAll('.error-message').forEach(el => el.remove());
-    document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
-    
-    // Validate required fields
-    form.querySelectorAll('[required]').forEach(field => {
-      if (!field.value.trim()) {
-        isValid = false;
-        field.classList.add('error');
+    // Čitanje datoteka i prikaz previewa
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'error-message';
-        errorMsg.textContent = 'Ovo polje je obavezno';
-        field.parentNode.appendChild(errorMsg);
-      }
+        // Provjera je li datoteka slika
+        if (!file.type.startsWith('image/')) {
+            showMessage('Možete uploadovati samo slike.', 'error');
+            continue;
+        }
+        
+        // Provjera veličine slike (ograničenje na 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showMessage('Slika ne smije biti veća od 5MB.', 'error');
+            continue;
+        }
+        
+        // Dodavanje slike u niz uploadovanih slika
+        uploadedImages.push(file);
+        
+        // Kreiranje previewa slike
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const photoContainer = document.createElement('div');
+            photoContainer.classList.add('uploaded-photo');
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = 'Uploaded photo';
+            
+            const removeButton = document.createElement('div');
+            removeButton.classList.add('remove-photo');
+            removeButton.innerHTML = '<i class="fas fa-times"></i>';
+            removeButton.setAttribute('data-index', i);
+            removeButton.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                uploadedImages.splice(index, 1);
+                photoContainer.remove();
+                
+                // Ažuriranje indeksa za preostala dugmad
+                document.querySelectorAll('.remove-photo').forEach((btn, idx) => {
+                    if (idx >= index) {
+                        btn.setAttribute('data-index', idx);
+                    }
+                });
+            });
+            
+            photoContainer.appendChild(img);
+            photoContainer.appendChild(removeButton);
+            uploadedPhotosContainer.appendChild(photoContainer);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+// Validacija forme
+function validateForm() {
+    const form = document.getElementById('prodaj-form');
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    
+    // Resetiranje prethodnih poruka o greškama
+    document.querySelectorAll('.error-message').forEach(message => {
+        message.remove();
     });
     
-    // Validate images
-    if (this.uploadedImages.length === 0) {
-      isValid = false;
-      const uploadContainer = document.querySelector('.photo-upload-container');
-      uploadContainer.classList.add('error');
-      
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'error-message';
-      errorMsg.textContent = 'Potrebno je dodati bar jednu sliku';
-      uploadContainer.parentNode.appendChild(errorMsg);
+    // Provjera svih obaveznih polja
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            field.classList.add('error');
+            
+            // Dodavanje poruke o grešci
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'error-message';
+            errorMessage.textContent = 'Ovo polje je obavezno';
+            field.parentNode.appendChild(errorMessage);
+        } else {
+            field.classList.remove('error');
+        }
+    });
+    
+    // Provjera slika
+    if (uploadedImages.length === 0) {
+        isValid = false;
+        const photoUploadContainer = document.querySelector('.photo-upload-container');
+        photoUploadContainer.classList.add('error');
+        
+        // Dodavanje poruke o grešci
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error-message';
+        errorMessage.textContent = 'Potrebno je dodati bar jednu sliku';
+        const parentElement = document.querySelector('.form-group:has(.photo-upload-container)');
+        if (parentElement) {
+            parentElement.appendChild(errorMessage);
+        } else {
+            document.querySelector('.photo-upload-container').parentNode.appendChild(errorMessage);
+        }
     }
     
     return isValid;
-  }
+}
 
-  async saveAsDraft() {
-    if (!this.validateForm()) {
-      this.showMessage('Molimo popunite sva obavezna polja.', 'error');
-      return;
-    }
+// Spremanje nacrta artikla
+async function saveAsDraft() {
+    const userData = checkUserLoggedIn();
+    if (!userData) return;
     
     try {
-      this.showMessage('Spremanje nacrta u toku...', 'info');
-      
-      const formData = this.prepareFormData('draft');
-      const response = await this.submitForm('/api/articles/draft', formData);
-      
-      this.showMessage('Nacrt je uspješno sačuvan!', 'success');
-      setTimeout(() => window.location.href = 'profile.html#drafts', 2000);
+        // Dohvaćanje vrijednosti forme
+        const formData = new FormData(document.getElementById('prodaj-form'));
+        
+        // Dodavanje slika u formData
+        uploadedImages.forEach((image, index) => {
+            formData.append(`image${index}`, image);
+        });
+        
+        // Dodavanje statusa i korisničkog ID-a
+        formData.append('status', 'draft');
+        formData.append('userId', userData.id);
+        
+        // Dohvatanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            throw new Error('Niste prijavljeni. Molimo prijavite se prije spremanja nacrta.');
+        }
+        
+        showMessage('Spremanje nacrta u toku...', 'info');
+        
+        // API poziv za spremanje nacrta
+        const response = await fetch('/api/articles/draft', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            let errorMessage = 'Greška prilikom spremanja nacrta';
+            
+            try {
+                const errorText = await response.text();
+                try {
+                    // Pokušaj parsirati JSON
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (jsonError) {
+                    // Ako nije JSON, uzmi tekst
+                    if (errorText) {
+                        errorMessage = `Server error: ${errorText.slice(0, 100)}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Nije moguće pročitati odgovor:', e);
+            }
+            
+            // Posebna poruka za timeout
+            if (response.status === 504) {
+                errorMessage = 'Spremanje je trajalo predugo. Probajte sa manjim slikama.';
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        // Ažuriranje UI-a
+        showMessage('Nacrt je uspješno sačuvan!', 'success');
+        
+        // Preusmjeravanje na profil nakon 2 sekunde
+        setTimeout(() => {
+            window.location.href = 'profile.html#drafts';
+        }, 2000);
+        
     } catch (error) {
-      console.error('Draft save error:', error);
-      this.showMessage(error.message || 'Greška prilikom spremanja nacrta', 'error');
+        console.error('Greška:', error);
+        showMessage(error.message || 'Došlo je do greške prilikom spremanja nacrta.', 'error');
     }
-  }
+}
 
-  async publishArticle(e) {
+// Objavljivanje artikla
+async function publishArticle(e) {
     e.preventDefault();
     
-    if (!this.validateForm()) {
-      this.showMessage('Molimo popunite sva obavezna polja.', 'error');
-      return;
+    const userData = checkUserLoggedIn();
+    if (!userData) return;
+    
+    // Validacija forme
+    if (!validateForm()) {
+        showMessage('Molimo popunite sva obavezna polja.', 'error');
+        return;
     }
     
     try {
-      this.showMessage('Objavljivanje artikla u toku...', 'info');
-      
-      const formData = this.prepareFormData('active');
-      const response = await this.submitForm('/api/articles', formData);
-      
-      this.showMessage('Artikal je uspješno objavljen!', 'success');
-      setTimeout(() => window.location.href = 'index.html', 2000);
+        // Dohvaćanje vrijednosti forme
+        const formData = new FormData(document.getElementById('prodaj-form'));
+        
+        // Dodavanje slika u formData
+        uploadedImages.forEach((image, index) => {
+            formData.append(`image${index}`, image);
+        });
+        
+        // Dodavanje statusa i korisničkog ID-a
+        formData.append('status', 'active');
+        formData.append('userId', userData.id);
+        
+        // Dohvatanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+            throw new Error('Niste prijavljeni. Molimo prijavite se prije objavljivanja artikla.');
+        }
+        
+        showMessage('Objavljivanje artikla u toku...', 'info');
+        
+        // API poziv za objavljivanje artikla
+        const response = await fetch('/api/articles', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            let errorMessage = 'Greška prilikom objavljivanja artikla';
+            
+            try {
+                const errorText = await response.text();
+                try {
+                    // Pokušaj parsirati JSON
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (jsonError) {
+                    // Ako nije JSON, uzmi tekst
+                    if (errorText) {
+                        errorMessage = `Server error: ${errorText.slice(0, 100)}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Nije moguće pročitati odgovor:', e);
+            }
+            
+            // Posebna poruka za timeout
+            if (response.status === 504) {
+                errorMessage = 'Objavljivanje je trajalo predugo. Probajte sa manjim slikama.';
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        // Ažuriranje UI-a
+        showMessage('Artikal je uspješno objavljen!', 'success');
+        
+        // Preusmjeravanje na početnu stranicu nakon 2 sekunde
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 2000);
+        
     } catch (error) {
-      console.error('Publish error:', error);
-      this.showMessage(error.message || 'Greška prilikom objavljivanja', 'error');
+        console.error('Greška:', error);
+        showMessage(error.message || 'Došlo je do greške prilikom objavljivanja artikla.', 'error');
     }
-  }
+}
 
-  prepareFormData(status) {
-    const formData = new FormData(document.getElementById('prodaj-form'));
+// Prikaz poruke
+function showMessage(message, type = 'info') {
+    // Provjeri postoji li već element za poruke
+    let messageContainer = document.getElementById('message-container');
     
-    this.uploadedImages.forEach((img, i) => {
-      formData.append(`images[${i}]`, img);
-    });
-    
-    formData.append('status', status);
-    formData.append('userId', this.userData.id);
-    
-    return formData;
-  }
-
-  async submitForm(url, formData) {
-    const token = localStorage.getItem('authToken');
-    if (!token) throw new Error('Niste prijavljeni');
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const error = await this.parseError(response);
-      throw new Error(error);
+    if (!messageContainer) {
+        // Ako ne postoji, kreiraj ga
+        messageContainer = document.createElement('div');
+        messageContainer.id = 'message-container';
+        document.body.appendChild(messageContainer);
     }
     
-    return await response.json();
-  }
+    // Kreiraj element za poruku
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${type}`;
+    messageElement.innerHTML = message;
+    
+    // Dodaj poruku u kontejner
+    messageContainer.appendChild(messageElement);
+    
+    // Postavi timeout za uklanjanje poruke
+    setTimeout(() => {
+        messageElement.classList.add('hide');
+        setTimeout(() => {
+            messageElement.remove();
+        }, 500);
+    }, 3000);
+}
 
-  async parseError(response) {
-    try {
-      const errorText = await response.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return errorData.message || errorData.error || 'Unknown error';
-      } catch {
-        return errorText || 'Unknown error';
-      }
-    } catch {
-      return response.status === 504 ? 
-        'Operacija je trajala predugo. Probajte sa manjim slikama.' : 
-        'Došlo je do greške';
-    }
-  }
-
-  // UI Helpers
-  initHamburgerMenu() {
+// Inicijalizacija hamburger menija
+function initHamburgerMenu() {
     const hamburgerIcon = document.getElementById('hamburgerIcon');
     const menuDropdown = document.getElementById('menuDropdown');
     
-    if (!hamburgerIcon || !menuDropdown) return;
-    
-    hamburgerIcon.addEventListener('click', () => {
-      hamburgerIcon.classList.toggle('active');
-      menuDropdown.classList.toggle('show');
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
-        hamburgerIcon.classList.remove('active');
-        menuDropdown.classList.remove('show');
-      }
-    });
-  }
-
-  showMessage(message, type = 'info') {
-    let container = document.getElementById('message-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'message-container';
-      document.body.appendChild(container);
+    if (hamburgerIcon && menuDropdown) {
+        hamburgerIcon.addEventListener('click', function() {
+            this.classList.toggle('active');
+            menuDropdown.classList.toggle('show');
+        });
+        
+        // Zatvaranje menija klikom izvan
+        document.addEventListener('click', function(e) {
+            if (!hamburgerIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
+                hamburgerIcon.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
+        });
     }
-    
-    const messageEl = document.createElement('div');
-    messageEl.className = `message ${type}`;
-    messageEl.textContent = message;
-    container.appendChild(messageEl);
-    
-    setTimeout(() => {
-      messageEl.classList.add('hide');
-      setTimeout(() => messageEl.remove(), 500);
-    }, 3000);
-  }
 }
 
-// Initialize the page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new SellPage();
+// Inicijalizacija stranice
+document.addEventListener('DOMContentLoaded', function() {
+    // Provjera je li korisnik prijavljen
+    const userData = checkUserLoggedIn();
+    if (!userData) return;
+    
+    console.log('Korisnik prijavljen:', userData);
+    
+    // Inicijalizacija hamburger menija
+    initHamburgerMenu();
+    
+    // Inicijalizacija opcija za upload fotografija
+    initPhotoUpload();
+    
+    // Event listener za dugme za spremanje nacrta
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', saveAsDraft);
+    }
+    
+    // Event listener za form submit
+    const form = document.getElementById('prodaj-form');
+    if (form) {
+        form.addEventListener('submit', publishArticle);
+    }
+    
+    // Event listeneri za uklanjanje klase error prilikom unosa
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('input', function() {
+            this.classList.remove('error');
+            
+            // Uklanjanje eventualne poruke o grešci
+            const errorMessage = this.parentNode.querySelector('.error-message');
+            if (errorMessage) {
+                errorMessage.remove();
+            }
+        });
+    });
 });
