@@ -117,6 +117,7 @@ function renderArtikli() {
           <div class="product-meta">
             <span class="product-size">${artikal.size}</span>
             <span class="product-category">${getCategoryName(artikal.category)}</span>
+            ${artikal.subtype ? `<span class="product-subtype">${getCategoryName(artikal.subtype)}</span>` : ''}
           </div>
         </div>
       </div>
@@ -134,6 +135,7 @@ function getCategoryName(categoryCode) {
   const categories = {
     'musko': 'Muško',
     'zensko': 'Žensko',
+    'unisex': 'Unisex',
     'djecije': 'Dječije',
     'jakne': 'Jakne',
     'duksevi': 'Duksevi',
@@ -253,15 +255,33 @@ function initFilters() {
     });
   }
   
+  if (params.subtype) {
+    document.querySelectorAll('.filter-option[data-subtype]').forEach(option => {
+      option.classList.toggle('active', option.getAttribute('data-subtype') === params.subtype);
+    });
+  }
+  
   // Event listeneri za opcije filtriranja
   document.querySelectorAll('.filter-option').forEach(option => {
     option.addEventListener('click', function(e) {
       e.preventDefault();
       
-      // Određivanje vrste filtera (type ili season)
-      const dataType = this.hasAttribute('data-type') ? 'type' : 'season';
-      let filterType = dataType === 'type' ? 'category' : 'season';
-      let filterValue = dataType === 'type' ? this.getAttribute('data-type') : this.getAttribute('data-season');
+      // Određivanje vrste filtera (type, season ili subtype)
+      let dataType, filterType, filterValue;
+      
+      if (this.hasAttribute('data-type')) {
+        dataType = 'type';
+        filterType = 'category';
+        filterValue = this.getAttribute('data-type');
+      } else if (this.hasAttribute('data-season')) {
+        dataType = 'season';
+        filterType = 'season';
+        filterValue = this.getAttribute('data-season');
+      } else if (this.hasAttribute('data-subtype')) {
+        dataType = 'subtype';
+        filterType = 'subtype';
+        filterValue = this.getAttribute('data-subtype');
+      }
       
       console.log(`Filter kliknut: ${filterType} = ${filterValue}`);
       
