@@ -48,7 +48,16 @@ async function fetchUserInfo(userId) {
     if (!userId) return null;
     
     try {
-        const response = await fetch(`/api/users/${userId}`);
+        // Dohvati token iz lokalnog skladišta
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`/api/users/${userId}`, {
+            headers: {
+                'Authorization': token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json'
+            }
+        });
+        
         if (!response.ok) {
             console.error(`Error fetching user info: ${response.status}`);
             return null;
@@ -174,7 +183,7 @@ function renderProduct(product, isFavorite, isInCart) {
     // Provjera je li trenutni korisnik vlasnik artikla
     const currentUserId = localStorage.getItem('userId');
     const isCurrentUserSeller = currentUserId === product.user_id;
-    const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Korisnik');
+    const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Učitavanje...');
     
     // HTML za korisnika
     const sellerHtml = `
@@ -220,11 +229,13 @@ function renderProduct(product, isFavorite, isInCart) {
                     <span>${isInCart ? 'Ukloni iz korpe' : 'Dodaj u korpu'}</span>
                 </button>
             </div>
-            
+
             <div class="product-metadata">
                 <div class="metadata-item">
                     <span class="metadata-label">Kategorija:</span>
-                    <span class="metadata-value">${categoryName}</span>
+                    <span class="metadata-value">
+                        <a href="index.html?category=${product.category}">${categoryName}</a>
+                    </span>
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Veličina:</span>
@@ -232,7 +243,9 @@ function renderProduct(product, isFavorite, isInCart) {
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Sezona:</span>
-                    <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
+                    <span class="metadata-value">
+                        <a href="index.html?season=${product.season}">${getSeasonName(product.season)}</a>
+                    </span>
                 </div>
                 <div class="metadata-item">
                     <span class="metadata-label">Stanje:</span>
@@ -241,7 +254,9 @@ function renderProduct(product, isFavorite, isInCart) {
                 ${product.brand ? `
                 <div class="metadata-item">
                     <span class="metadata-label">Brend:</span>
-                    <span class="metadata-value">${product.brand}</span>
+                    <span class="metadata-value">
+                        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+                    </span>
                 </div>` : ''}
                 ${product.color ? `
                 <div class="metadata-item">
@@ -258,18 +273,18 @@ function renderProduct(product, isFavorite, isInCart) {
                     <span class="metadata-value">${formattedDate}</span>
                 </div>
             </div>
-            
+
             <div class="product-description">
                 <h2>Opis</h2>
                 <div class="description-content">
                     ${product.description || 'Nema opisa za ovaj proizvod.'}
                 </div>
             </div>
-            
+
             ${sellerHtml}
         </div>
     `;
-    
+
     // Dodavanje event listenera za thumbnailove (ako postoje)
     if (product.images && product.images.length > 1) {
         document.querySelectorAll('.thumbnail').forEach(thumb => {
@@ -288,7 +303,7 @@ function renderProduct(product, isFavorite, isInCart) {
             });
         });
     }
-    
+
     // Event listener za dugme za favorite
     const favoriteBtn = document.getElementById('favoriteBtn');
     if (favoriteBtn) {
@@ -301,7 +316,7 @@ function renderProduct(product, isFavorite, isInCart) {
             }
         });
     }
-    
+
     // Event listener za dugme za korpu
     const cartBtn = document.getElementById('cartBtn');
     if (cartBtn) {
@@ -314,64 +329,75 @@ function renderProduct(product, isFavorite, isInCart) {
             }
         });
     }
-    
+
+    // Inicijalizacija hamburger menija
+    initHamburgerMenu();
+
+    // Provjera korisničke sesije
+    checkUserLoggedIn();
+
     // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
     if (product.user_id && !isCurrentUserSeller) {
+        console.log(`Attempting to fetch user info for ID: ${product.user_id}`);
         fetchUserInfo(product.user_id).then(userData => {
+            console.log('User data received:', userData);
             if (userData) {
                 const sellerNameLink = document.getElementById('seller-name-link');
                 if (sellerNameLink) {
                     sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
                 }
             }
+        }).catch(error => {
+            console.error('Error in user info promise:', error);
+        });
+    }
+} // Završetak funkcije renderProduct
+
+// Inicijalizacija hamburger menija
+function initHamburgerMenu() {
+    const hamburgerIcon = document.getElementById('hamburgerIcon');
+    const menuDropdown = document.getElementById('menuDropdown');
+    
+    if (hamburgerIcon && menuDropdown) {
+        hamburgerIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Spriječava propagaciju događaja
+            console.log('Hamburger kliknut');
+            this.classList.toggle('active');
+            menuDropdown.classList.toggle('show');
+        });
+        
+        // Zatvaranje menija klikom izvan
+        document.addEventListener('click', function(e) {
+            if (hamburgerIcon && menuDropdown && 
+                !hamburgerIcon.contains(e.target) && 
+                !menuDropdown.contains(e.target)) {
+                hamburgerIcon.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
         });
     }
 }
 
-// Dobijanje naziva kategorije na osnovu koda
-function getCategoryName(categoryCode) {
-    const categories = {
-        'musko': 'Muško',
-        'zensko': 'Žensko',
-        'djecije': 'Dječije',
-        'jakne': 'Jakne',
-        'duksevi': 'Duksevi',
-        'majice': 'Majice',
-        'jeans': 'Jeans',
-        'sorcevi': 'Šorcevi',
-        'kosulje': 'Košulje i bluze',
-        'handmade': 'Handmade',
-        'starine': 'Starine',
-        'ostalo': 'Ostalo'
-    };
+// Provjera je li korisnik prijavljen
+function checkUserLoggedIn() {
+    const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+    const sellButton = document.getElementById('sellButton');
+    const profileLink = document.getElementById('profileLink');
     
-    return categories[categoryCode] || categoryCode || 'Nije navedeno';
-}
-
-// Dobijanje naziva sezone na osnovu koda
-function getSeasonName(seasonCode) {
-    const seasons = {
-        'proljece': 'Proljeće',
-        'ljeto': 'Ljeto',
-        'jesen': 'Jesen',
-        'zima': 'Zima',
-        'sve': 'Sva godišnja doba'
-    };
-    
-    return seasons[seasonCode] || seasonCode || 'Nije navedeno';
-}
-
-// Dobijanje naziva stanja na osnovu koda
-function getConditionName(conditionCode) {
-    const conditions = {
-        'novo': 'Novo sa etiketom',
-        'kao-novo': 'Kao novo',
-        'veoma-dobro': 'Veoma dobro',
-        'dobro': 'Dobro',
-        'prihvatljivo': 'Prihvatljivo'
-    };
-    
-    return conditions[conditionCode] || conditionCode || 'Nije navedeno';
+    if (prijavljeniKorisnik) {
+        // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na sell.html
+        if (sellButton) sellButton.href = 'sell.html';
+        
+        // Prikaži link za profil
+        if (profileLink) profileLink.style.display = 'block';
+    } else {
+        // Ako korisnik nije prijavljen, link "Prodaj svoju odjeću" vodi na register.html
+        if (sellButton) sellButton.href = 'register.html';
+        
+        // Sakrij link za profil
+        if (profileLink) profileLink.style.display = 'none';
+    }
 }
 
 // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
@@ -452,16 +478,69 @@ async function toggleCart() {
     }
 }
 
+// Dobijanje naziva kategorije na osnovu koda
+function getCategoryName(categoryCode) {
+    const categories = {
+        'musko': 'Muško',
+        'zensko': 'Žensko',
+        'djecije': 'Dječije',
+        'jakne': 'Jakne',
+        'duksevi': 'Duksevi',
+        'majice': 'Majice',
+        'jeans': 'Jeans',
+        'sorcevi': 'Šorcevi',
+        'kosulje': 'Košulje i bluze',
+        'handmade': 'Handmade',
+        'starine': 'Starine',
+        'ostalo': 'Ostalo'
+    };
+    
+    return categories[categoryCode] || categoryCode || 'Nije navedeno';
+}
+
+// Dobijanje naziva sezone na osnovu koda
+function getSeasonName(seasonCode) {
+    const seasons = {
+        'proljece': 'Proljeće',
+        'ljeto': 'Ljeto',
+        'jesen': 'Jesen',
+        'zima': 'Zima',
+        'sve': 'Sva godišnja doba'
+    };
+    
+    return seasons[seasonCode] || seasonCode || 'Nije navedeno';
+}
+
+// Dobijanje naziva stanja na osnovu koda
+function getConditionName(conditionCode) {
+    const conditions = {
+        'novo': 'Novo sa etiketom',
+        'kao-novo': 'Kao novo',
+        'veoma-dobro': 'Veoma dobro',
+        'dobro': 'Dobro',
+        'prihvatljivo': 'Prihvatljivo'
+    };
+    
+    return conditions[conditionCode] || conditionCode || 'Nije navedeno';
+}
+
 // Inicijalizacija stranice
 document.addEventListener('DOMContentLoaded', async function() {
+    // Provjera da li postoji element za detalje proizvoda
+    const productDetailElement = document.getElementById('product-detail');
+    if (!productDetailElement) {
+        console.log("Product detail element not found, skipping product initialization");
+        return; // Napusti ako element ne postoji (nije product stranica)
+    }
+    
     // Dohvatanje ID-a proizvoda iz URL-a
     productId = getProductIdFromUrl();
     
-    console.log("Product ID from URL:", productId); // Debugging
+    console.log("Product ID from URL:", productId);
     
     if (!productId) {
         // Ako nema ID-a, prikaži poruku o grešci
-        document.getElementById('product-detail').innerHTML = `
+        productDetailElement.innerHTML = `
             <div class="error-message">
                 <p>Proizvod nije pronađen. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
             </div>
@@ -473,7 +552,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const product = await fetchProduct(productId);
     
     if (!product) {
-        document.getElementById('product-detail').innerHTML = `
+        productDetailElement.innerHTML = `
             <div class="error-message">
                 <p>Proizvod nije pronađen ili server nije dostupan. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
             </div>
