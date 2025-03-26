@@ -82,6 +82,8 @@ async function loadUserListings() {
             return [];
         }
         
+        console.log("Dohvaćam artikle za korisnika s ID:", userId); // Debugging
+        
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
@@ -94,6 +96,8 @@ async function loadUserListings() {
         
         for (const endpoint of endpoints) {
             try {
+                console.log("Pokušavam endpoint:", endpoint); // Debugging
+                
                 const response = await fetch(endpoint, {
                     headers: {
                         'Authorization': token ? `Bearer ${token}` : ''
@@ -102,22 +106,32 @@ async function loadUserListings() {
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Dohvaćeni artikli korisnika:", data);
-                    return Array.isArray(data) ? data : [];
+                    console.log("Dohvaćeni artikli:", data);
+                    
+                    // Dodatna provjera na klijentu da filtriramo samo artikle ovog korisnika
+                    const filteredData = Array.isArray(data) 
+                        ? data.filter(item => (
+                            item.user_id === userId || 
+                            item.userId === userId || 
+                            item.seller_id === userId
+                          ))
+                        : [];
+                    
+                    console.log("Filtrirani artikli za korisnika:", filteredData);
+                    return filteredData;
                 }
             } catch (endpointError) {
                 console.error(`Greška za endpoint ${endpoint}:`, endpointError);
             }
         }
         
-        console.error('Svi pokušaji dohvaćanja artikala su propali');
+        // Ako ništa ne uspije, vrati prazno
         return [];
     } catch (error) {
         console.error('Glavna greška kod dohvaćanja artikala:', error);
         return [];
     }
 }
-
 // Učitavanje omiljenih artikala korisnika
 async function loadUserFavorites() {
     try {
