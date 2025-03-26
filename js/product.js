@@ -47,25 +47,32 @@ if (!document.getElementById('product-detail')) {
         }
     }
 
-    // Dohvaćanje informacija o korisniku
-    async function fetchUserInfo(userId) {
-        if (!userId) return null;
+   // Dohvaćanje informacija o korisniku
+async function fetchUserInfo(userId) {
+    if (!userId) return null;
+    
+    try {
+        // Dohvaćanje tokena iz localStorage-a
+        const token = localStorage.getItem('authToken');
         
-        try {
-            const response = await fetch(`/api/users/${userId}`);
-            if (!response.ok) {
-                console.error(`Error fetching user info: ${response.status}`);
-                return null;
+        const response = await fetch(`/api/users/${userId}`, {
+            headers: {
+                'Authorization': token ? `Bearer ${token}` : ''
             }
-            
-            const userData = await response.json();
-            return userData;
-        } catch (error) {
-            console.error('Error fetching user info:', error);
+        });
+        
+        if (!response.ok) {
+            console.error(`Error fetching user info: ${response.status}`);
             return null;
         }
+        
+        const userData = await response.json();
+        return userData;
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        return null;
     }
-
+}
     // Provjera statusa favorita za proizvod
     async function fetchFavoriteStatus(id) {
         try {
@@ -242,11 +249,13 @@ if (!document.getElementById('product-detail')) {
                         <span class="metadata-label">Stanje:</span>
                         <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
                     </div>
-                    ${product.brand ? `
-                    <div class="metadata-item">
-                        <span class="metadata-label">Brend:</span>
-                        <span class="metadata-value">${product.brand}</span>
-                    </div>` : ''}
+                   ${product.brand ? `
+<div class="metadata-item">
+    <span class="metadata-label">Brend:</span>
+    <span class="metadata-value">
+        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+    </span>
+</div>` : ''}
                     ${product.color ? `
                     <div class="metadata-item">
                         <span class="metadata-label">Boja:</span>
@@ -319,18 +328,21 @@ if (!document.getElementById('product-detail')) {
             });
         }
         
-        // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
-        if (product.user_id && !isCurrentUserSeller) {
-            fetchUserInfo(product.user_id).then(userData => {
-                if (userData) {
-                    const sellerNameLink = document.getElementById('seller-name-link');
-                    if (sellerNameLink) {
-                        sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
-                    }
-                }
-            });
+      // Asinkrono dohvati podatke o korisniku za ažuriranje imena prodavača
+if (product.user_id && !isCurrentUserSeller) {
+    console.log("Dohvaćam informacije za korisnika s ID:", product.user_id);
+    fetchUserInfo(product.user_id).then(userData => {
+        console.log("Dohvaćeni podaci korisnika:", userData);
+        if (userData) {
+            const sellerNameLink = document.getElementById('seller-name-link');
+            if (sellerNameLink) {
+                sellerNameLink.textContent = userData.username || userData.name || userData.displayName || 'Korisnik';
+            }
+        } else {
+            console.log("Nije moguće dohvatiti podatke o korisniku");
         }
-    }
+    });
+}
 
     // Dobijanje naziva kategorije na osnovu koda
     function getCategoryName(categoryCode) {
