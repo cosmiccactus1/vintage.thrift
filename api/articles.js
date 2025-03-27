@@ -73,10 +73,22 @@ function parseURL(req) {
   console.log('Request method:', req.method);
   console.log('Request query:', req.query);
 
+  // NOVA LINIJA: Provjeri za URL pattern /user/{userId}
+  const userMatch = req.url.match(/\/user\/([^\/]+)/);
+  if (userMatch && userMatch[1]) {
+    console.log('Pronađen user ID regex-om:', userMatch[1]);
+    return {
+      type: 'user_articles',
+      userId: userMatch[1]
+    };
+  }
+
   const urlParts = req.url.split('/').filter(Boolean);
+  console.log('URL dijelovi:', urlParts);
   
   // Ako URL sadrži /user/ to znači da je ruta /api/articles/user/:userId
   if (urlParts.length >= 2 && urlParts[0] === 'user') {
+    console.log('Pronađen user ID iz urlParts:', urlParts[1]);
     return {
       type: 'user_articles',
       userId: urlParts[1]
@@ -206,11 +218,15 @@ module.exports = async (req, res) => {
       
       // Dohvaćanje artikala korisnika
       if (parsedURL.type === 'user_articles') {
+        console.log('DOHVAĆAM ARTIKLE ZA KORISNIKA:', parsedURL.userId);
+        
         // Priprema osnovne query s filterom po user_id
         let query = supabase
           .from('articles')
           .select('*')
           .eq('user_id', parsedURL.userId);
+        
+        console.log('Query postavljen s filterom: user_id =', parsedURL.userId);
         
         // Provjera autentikacije
         const authUserId = await verifyToken(req);
@@ -221,6 +237,9 @@ module.exports = async (req, res) => {
         }
         
         const { data: articles, error } = await query;
+        
+        console.log('Broj pronađenih artikala:', articles ? articles.length : 0);
+        console.log('Greška:', error);
         
         if (error) throw error;
         
