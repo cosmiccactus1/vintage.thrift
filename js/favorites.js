@@ -12,6 +12,7 @@ async function fetchFavoriteItems() {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
+        // Prvo dohvati ID-ove favorita
         const response = await fetch('/api/favorites', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -22,8 +23,51 @@ async function fetchFavoriteItems() {
             throw new Error('Greška prilikom dohvatanja omiljenih artikala');
         }
         
-        const data = await response.json();
-        return data;
+        const favoritesData = await response.json();
+        
+        // Provjeri da li je response prazan ili neispravan
+        if (!Array.isArray(favoritesData) || favoritesData.length === 0) {
+            return [];
+        }
+        
+        // Dohvati potpune podatke za svaki artikal
+        const completeItems = [];
+        
+        for (const favItem of favoritesData) {
+            // Uzmi ID artikla - može biti direktno ID ili unutar objekta
+            const itemId = favItem._id || favItem.id || (favItem.article ? favItem.article._id || favItem.article.id : null);
+            
+            if (!itemId) {
+                console.warn('Artikal nema validan ID:', favItem);
+                continue;
+            }
+            
+            try {
+                // Dohvati detalje artikla
+                const itemResponse = await fetch(`/api/articles/${itemId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (itemResponse.ok) {
+                    const itemData = await itemResponse.json();
+                    // Označimo da je artikal u favoritima
+                    itemData.favorite = true;
+                    completeItems.push(itemData);
+                } else {
+                    console.warn(`Neuspjelo dohvaćanje detalja za artikal ${itemId}`);
+                    // Dodajemo originalni favorit item ako ne možemo dohvatiti detalje
+                    completeItems.push(favItem);
+                }
+            } catch (itemError) {
+                console.error(`Greška pri dohvaćanju artikla ${itemId}:`, itemError);
+                completeItems.push(favItem);
+            }
+        }
+        
+        console.log('Dohvaćeni potpuni podaci o favoritima:', completeItems);
+        return completeItems;
     } catch (error) {
         console.error('Greška:', error);
         return [];
@@ -50,26 +94,31 @@ function renderFavoriteItems(items) {
     let html = '';
     
     items.forEach(item => {
+        // Provjeri i ispisi podatke o artiklima radi debugginga
+        console.log(`Artikal ${item._id || item.id} slike:`, item.images);
+        
         html += `
-            <div class="product-card" data-id="${item._id}">
+            <div class="product-card" data-id="${item._id || item.id}">
                 <div class="product-image">
-                    <a href="product.html?id=${item._id}">
-                        <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" alt="${item.title}">
+                    <a href="product.html?id=${item._id || item.id}">
+                        <img src="${item.images && item.images.length > 0 ? item.images[0] : ''}" 
+                             alt="${item.title}"
+                             onerror="this.onerror=null; console.log('Slika se nije učitala:', this.src);">
                     </a>
                     <div class="product-actions">
-                        <button class="favorite-btn active" data-id="${item._id}">
+                        <button class="favorite-btn active" data-id="${item._id || item.id}">
                             <i class="fas fa-heart"></i>
                         </button>
-                        <button class="cart-btn ${item.inCart ? 'active' : ''}" data-id="${item._id}">
+                        <button class="cart-btn ${item.inCart ? 'active' : ''}" data-id="${item._id || item.id}">
                             <i class="fa${item.inCart ? 's' : 'r'} fa-shopping-bag"></i>
                         </button>
                     </div>
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id}">${item.title}</a></h3>
+                    <h3 class="product-title"><a href="product.html?id=${item._id || item.id}">${item.title}</a></h3>
                     <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
                     <div class="product-meta">
-                        <span class="product-size">${item.size}</span>
+                        <span class="product-size">${item.size || 'N/A'}</span>
                         <span class="product-category">${getCategoryName(item.category)}</span>
                     </div>
                 </div>
