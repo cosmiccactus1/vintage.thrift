@@ -38,22 +38,11 @@ async function fetchArtikli() {
     
     // Kreiraj URL s query parametrima
     let url = '/api/articles';
-    let isHomepage = false;
-    
-    // Provjera jesmo li na početnoj stranici
-    const path = window.location.pathname;
-    if (path === '/' || path === '/index.html' || path === '') {
-      isHomepage = true;
-    }
     
     // Ako postoji seller parametar, koristimo API endpoint za artikle korisnika
     if (params.seller) {
       url = `/api/articles/user/${params.seller}`;
       console.log('Fetching seller articles from URL:', url);
-    } else if (isHomepage && Object.keys(params).length === 0) {
-      // Na početnoj stranici bez filtera dohvaćamo najnovije artikle (max 30)
-      url = '/api/articles?limit=30';
-      console.log('Fetching newest 30 articles for homepage');
     } else {
       // Inače, koristimo standardni endpoint s query parametrima
       if (Object.keys(params).length > 0) {
@@ -134,7 +123,7 @@ function renderArtikli() {
           <h3 class="product-title"><a href="product.html?id=${artikal._id}">${artikal.title}</a></h3>
           <p class="product-price">${artikal.price.toFixed(2)} KM</p>
           <div class="product-meta">
-            <span class="product-size">${artikal.size || ''}</span>
+            <span class="product-size">${artikal.size}</span>
             <span class="product-category">${getCategoryName(artikal.category)}</span>
             ${artikal.subtype ? `<span class="product-subtype">${getCategoryName(artikal.subtype)}</span>` : ''}
           </div>
@@ -170,149 +159,6 @@ function getCategoryName(categoryCode) {
   return categories[categoryCode] || categoryCode;
 }
 
-// Funkcija za prikaz pop-up prozora za prijavu/registraciju
-function showLoginPopup(action) {
-  // Provjeri postoji li već pop-up
-  let popup = document.getElementById('login-popup');
-  
-  if (!popup) {
-    // Kreiraj pop-up element
-    popup = document.createElement('div');
-    popup.id = 'login-popup';
-    popup.className = 'login-popup';
-    
-    // Postavi sadržaj pop-up-a
-    popup.innerHTML = `
-      <div class="popup-content">
-        <span class="close-popup">&times;</span>
-        <h2>${action === 'favorite' ? 'Dodavanje u favorite' : 'Dodavanje u korpu'}</h2>
-        <p>Za ovu akciju potrebno je da budete prijavljeni.</p>
-        <div class="popup-buttons">
-          <button id="popup-login-btn" class="popup-btn primary-btn">Prijava</button>
-          <button id="popup-register-btn" class="popup-btn secondary-btn">Registracija</button>
-        </div>
-      </div>
-    `;
-    
-    // Dodaj pop-up u body
-    document.body.appendChild(popup);
-    
-    // Dodaj CSS za pop-up ako već ne postoji
-    if (!document.getElementById('popup-styles')) {
-      const style = document.createElement('style');
-      style.id = 'popup-styles';
-      style.textContent = `
-        .login-popup {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0,0,0,0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-        }
-        .popup-content {
-          background-color: white;
-          padding: 30px;
-          border-radius: 8px;
-          max-width: 400px;
-          width: 90%;
-          position: relative;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .close-popup {
-          position: absolute;
-          top: 10px;
-          right: 15px;
-          font-size: 24px;
-          cursor: pointer;
-          color: #777;
-        }
-        .close-popup:hover {
-          color: #333;
-        }
-        .popup-buttons {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 20px;
-        }
-        .popup-btn {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-        .primary-btn {
-          background-color: #4CAF50;
-          color: white;
-        }
-        .secondary-btn {
-          background-color: #f1f1f1;
-          color: #333;
-        }
-        .popup-btn:hover {
-          opacity: 0.9;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
-    // Dodaj event listenere za dugmad
-    document.querySelector('.close-popup').addEventListener('click', () => {
-      popup.remove();
-    });
-    
-    document.getElementById('popup-login-btn').addEventListener('click', () => {
-      // Redirekcija na stranicu za prijavu
-      window.location.href = 'register.html#login';
-    });
-    
-    document.getElementById('popup-register-btn').addEventListener('click', () => {
-      // Redirekcija na stranicu za registraciju
-      window.location.href = 'register.html';
-    });
-    
-    // Zatvaranje klikom izvan pop-up-a
-    popup.addEventListener('click', (e) => {
-      if (e.target === popup) {
-        popup.remove();
-      }
-    });
-  }
-}
-
-// Funkcija za provjeru prijavljenog korisnika
-function isUserLoggedIn() {
-  try {
-    const storedUser = localStorage.getItem('prijavljeniKorisnik');
-    if (!storedUser) return false;
-    
-    // Pokušaj parsirati kao JSON
-    try {
-      const jsonUser = JSON.parse(storedUser);
-      // Provjeri postoji li token
-      if (jsonUser && jsonUser.token) {
-        console.log('Korisnik prijavljen s JSON tokenom');
-        return jsonUser.token;
-      }
-    } catch (parseError) {
-      // Ako nije JSON, možda je samo string token
-      if (typeof storedUser === 'string' && storedUser.trim() !== '') {
-        console.log('Korisnik prijavljen sa string tokenom');
-        return storedUser;
-      }
-    }
-  } catch (error) {
-    console.error('Greška pri provjeri prijavljenog korisnika:', error);
-  }
-  
-  return false;
-}
-
 // Dodavanje event listenera za dugmad na karticama proizvoda
 function addProductButtonListeners() {
   // Event listeneri za dugmad za omiljene
@@ -322,16 +168,28 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Provjeri je li korisnik prijavljen
-      const token = isUserLoggedIn();
-      
-      // Ako korisnik nije prijavljen, prikaži popup
-      if (!token) {
-        showLoginPopup('favorite');
-        return;
-      }
-      
       try {
+        // Dohvati token iz localStorage-a
+        let token = null;
+        const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+        
+        if (prijavljeniKorisnik) {
+          try {
+            // Probaj parsirati JSON
+            const parsed = JSON.parse(prijavljeniKorisnik);
+            token = parsed.token;
+          } catch (e) {
+            // Ako nije JSON, koristi direktno
+            token = prijavljeniKorisnik;
+          }
+        }
+        
+        // Ako nema tokena, obavijesti korisnika
+        if (!token) {
+          alert("Morate biti prijavljeni za dodavanje u favorite");
+          return;
+        }
+        
         // Poziv API-ja za dodavanje/uklanjanje iz omiljenih
         const response = await fetch(`/api/favorites/${id}`, {
           method: isActive ? 'DELETE' : 'POST',
@@ -374,16 +232,28 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Provjeri je li korisnik prijavljen
-      const token = isUserLoggedIn();
-      
-      // Ako korisnik nije prijavljen, prikaži popup
-      if (!token) {
-        showLoginPopup('cart');
-        return;
-      }
-      
       try {
+        // Dohvati token iz localStorage-a
+        let token = null;
+        const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+        
+        if (prijavljeniKorisnik) {
+          try {
+            // Probaj parsirati JSON
+            const parsed = JSON.parse(prijavljeniKorisnik);
+            token = parsed.token;
+          } catch (e) {
+            // Ako nije JSON, koristi direktno
+            token = prijavljeniKorisnik;
+          }
+        }
+        
+        // Ako nema tokena, obavijesti korisnika
+        if (!token) {
+          alert("Morate biti prijavljeni za dodavanje u korpu");
+          return;
+        }
+        
         // Poziv API-ja za dodavanje/uklanjanje iz korpe
         const response = await fetch(`/api/cart/${id}`, {
           method: isActive ? 'DELETE' : 'POST',
@@ -493,13 +363,28 @@ function initFilters() {
 
 // Provjera prijavljenog korisnika
 function checkLoggedInUser() {
-  const isPrijavljen = !!isUserLoggedIn();
-  console.log('Provjera prijavljenog korisnika:', isPrijavljen ? 'Prijavljen' : 'Nije prijavljen');
+  // Poboljšana provjera za prijavljenog korisnika
+  let korisnikPrijavljen = false;
+  try {
+    const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+    if (prijavljeniKorisnik) {
+      try {
+        // Probaj parsirati JSON
+        const parsed = JSON.parse(prijavljeniKorisnik);
+        korisnikPrijavljen = !!parsed.token;
+      } catch (e) {
+        // Ako nije JSON, provjeri je li neprazan string
+        korisnikPrijavljen = typeof prijavljeniKorisnik === 'string' && prijavljeniKorisnik.trim() !== '';
+      }
+    }
+  } catch (error) {
+    console.error('Greška pri provjeri korisnika:', error);
+  }
   
   const sellButton = document.getElementById('sellButton');
   const profileLink = document.getElementById('profileLink');
   
-  if (isPrijavljen) {
+  if (korisnikPrijavljen) {
     // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na sell.html
     if (sellButton) sellButton.href = 'sell.html';
     
