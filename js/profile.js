@@ -132,12 +132,13 @@ async function loadUserListings() {
         return [];
     }
 }
-// Učitavanje omiljenih artikala korisnika
+// Učitavanje omiljenih artikala korisnika - POBOLJŠANA VERZIJA
 async function loadUserFavorites() {
     try {
         // Dohvaćanje tokena iz localStorage-a
         const token = localStorage.getItem('authToken');
         
+        // Prvo dohvati ID-ove favorita
         const response = await fetch('/api/favorites', {
             headers: {
                 'Authorization': token ? `Bearer ${token}` : ''
@@ -148,15 +149,131 @@ async function loadUserFavorites() {
             return [];
         }
         
-        const data = await response.json();
-        console.log("Dohvaćeni favoriti:", data);
-        return Array.isArray(data) ? data : [];
+        const favoritesData = await response.json();
+        console.log('Dohvaćeni favoriti iz API:', favoritesData);
+        
+        // Ako je prazan rezultat, vrati prazno
+        if (!Array.isArray(favoritesData) || favoritesData.length === 0) {
+            return [];
+        }
+        
+        // OPCIJA 1: Korisiti direktno artikle iz localStorage ako postoje
+        try {
+            // Provjeri postoje li artikli u localStorage-u
+            const storedArticles = localStorage.getItem('articles');
+            if (storedArticles) {
+                const allArticles = JSON.parse(storedArticles);
+                
+                // Filtriraj samo artikle koji su u favoritima
+                const favoriteArticles = allArticles.filter(article => {
+                    // Provjeri da li je artikal u favoritima
+                    return favoritesData.some(fav => {
+                        const favId = fav._id || fav.id || (fav.article ? fav.article._id || fav.article.id : null);
+                        return favId === article._id || favId === article.id;
+                    });
+                });
+                
+                console.log('Favoriti iz localStorage artikala:', favoriteArticles);
+                
+                if (favoriteArticles.length > 0) {
+                    return favoriteArticles.map(article => ({
+                        ...article,
+                        favorite: true
+                    }));
+                }
+            }
+        } catch (localStorageError) {
+            console.warn('Greška pri dohvaćanju artikala iz localStorage:', localStorageError);
+        }
+        
+        // OPCIJA 2: Ako ne možemo koristiti localStorage, dohvati sve artikle iz API-ja
+        try {
+            const allArticlesResponse = await fetch('/api/articles', {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
+            
+            if (allArticlesResponse.ok) {
+                const allArticles = await allArticlesResponse.json();
+                
+                // Filtriraj samo artikle koji su u favoritima
+                const favoriteArticles = allArticles.filter(article => {
+                    return favoritesData.some(fav => {
+                        const favId = fav._id || fav.id || (fav.article ? fav.article._id || fav.article.id : null);
+                        return favId === article._id || favId === article.id;
+                    });
+                });
+                
+                console.log('Favoriti iz API svih artikala:', favoriteArticles);
+                
+                if (favoriteArticles.length > 0) {
+                    return favoriteArticles.map(article => ({
+                        ...article,
+                        favorite: true
+                    }));
+                }
+            }
+        } catch (apiAllArticlesError) {
+            console.warn('Greška pri dohvaćanju svih artikala iz API:', apiAllArticlesError);
+        }
+        
+        // OPCIJA 3: Ako prve dvije opcije ne uspiju, dohvaćamo pojedinačno artikle
+        const completeItems = [];
+        
+        for (const favItem of favoritesData) {
+            // Uzmi ID artikla - može biti direktno ID ili unutar objekta
+            const itemId = favItem._id || favItem.id || (favItem.article ? favItem.article._id || favItem.article.id : null);
+            
+            if (!itemId) {
+                console.warn('Artikal nema validan ID:', favItem);
+                continue;
+            }
+            
+            try {
+                // Dohvati detalje artikla
+                const itemResponse = await fetch(`/api/articles/${itemId}`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                
+                if (itemResponse.ok) {
+                    const itemData = await itemResponse.json();
+                    // Dodaj standardna polja ako nedostaju (za slučaj različitih API formata)
+                    const completeItemData = {
+                        ...itemData,
+                        favorite: true,
+                        _id: itemData._id || itemData.id || itemId,
+                        images: itemData.images || (itemData.image ? [itemData.image] : [])
+                    };
+                    completeItems.push(completeItemData);
+                } else {
+                    console.warn(`Neuspjelo dohvaćanje detalja za artikal ${itemId}`);
+                    // Dodajemo originalni favorit item ako ne možemo dohvatiti detalje
+                    completeItems.push({
+                        ...favItem,
+                        _id: itemId,
+                        favorite: true
+                    });
+                }
+            } catch (itemError) {
+                console.error(`Greška pri dohvaćanju artikla ${itemId}:`, itemError);
+                completeItems.push({
+                    ...favItem,
+                    _id: itemId,
+                    favorite: true
+                });
+            }
+        }
+        
+        console.log('Dohvaćeni artikli opcija 3:', completeItems);
+        return completeItems;
     } catch (error) {
         console.error('Greška:', error);
         return [];
     }
 }
-
 // Učitavanje narudžbi korisnika
 async function loadUserOrders() {
     try {
@@ -324,6 +441,7 @@ function renderUserListings(listings) {
 }
 
 // Prikaz omiljenih artikala korisnika
+// Prikaz omiljenih artikala korisnika - POBOLJŠANA VERZIJA
 function renderUserFavorites(favorites) {
     const container = document.getElementById('user-favorites');
     
@@ -332,22 +450,47 @@ function renderUserFavorites(favorites) {
     if (favorites.length === 0) {
         container.innerHTML = `
             <div class="empty-favorites">
-                <p>Nemate nijedan artikal među favoritima</p>
-                <a href="index.html" class="button">Pregledaj artikle</a>
+                <p>Vaš ormar je prazan</p>
+                <a href="index.html" class="button">Pronađi novu odjeću</a>
             </div>
         `;
         return;
     }
     
+    console.log('Prikazujem favorite u profilu:', favorites);
+    
     let html = '';
     
     favorites.forEach(item => {
+        // Provjeri da li postoje slike
+        const hasImages = item.images && Array.isArray(item.images) && item.images.length > 0;
+        const imageUrl = hasImages ? item.images[0] : '';
+        
+        // Provjeri za moguće druge formate slika u API odgovoru
+        const alternativeImageUrl = item.image || 
+                                  (item.article && item.article.image) || 
+                                  (item.article && item.article.images && item.article.images.length > 0 ? 
+                                   item.article.images[0] : '');
+        
+        // Odaberi najbolju dostupnu sliku
+        const bestImageUrl = imageUrl || alternativeImageUrl || '';
+        
+        console.log(`Artikal ${item._id || item.id}:`, {
+            title: item.title || item.name,
+            hasImages: hasImages,
+            imageUrl: imageUrl,
+            alternativeImageUrl: alternativeImageUrl,
+            bestImageUrl: bestImageUrl
+        });
+        
         html += `
             <div class="product-card" data-id="${item._id || item.id}">
                 <div class="product-image">
                     <a href="product.html?id=${item._id || item.id}">
-                        <img src="${item.images && item.images.length > 0 ? item.images[0] : 'https://via.placeholder.com/300x400?text=No+Image'}" alt="${item.title}"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x400?text=No+Image'">
+                        <img 
+                            src="${bestImageUrl}" 
+                            alt="${item.title || item.name || 'Artikal'}"
+                            onerror="this.onerror=null; this.src='https://via.placeholder.com/300x400?text=No+Image'">
                     </a>
                     <div class="product-actions">
                         <button class="favorite-btn active" data-id="${item._id || item.id}">
@@ -359,8 +502,14 @@ function renderUserFavorites(favorites) {
                     </div>
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id || item.id}">${item.title}</a></h3>
-                    <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                    <h3 class="product-title">
+                        <a href="product.html?id=${item._id || item.id}">
+                            ${item.title || item.name || 'Bez naziva'}
+                        </a>
+                    </h3>
+                    <p class="product-price">
+                        ${parseFloat(item.price || 0).toFixed(2)} KM
+                    </p>
                     <div class="product-meta">
                         <span class="product-size">${item.size || 'N/A'}</span>
                         <span class="product-category">${getCategoryName(item.category)}</span>
@@ -387,7 +536,6 @@ function renderUserFavorites(favorites) {
         });
     });
 }
-
 // Prikaz narudžbi korisnika
 function renderUserOrders(orders) {
     const container = document.getElementById('user-orders');
@@ -514,11 +662,12 @@ async function removeFromFavorites(id) {
         renderUserFavorites(userFavorites);
         
         // Prikaži poruku o uspjehu
-        showMessage('Artikal je uklonjen iz favorita.', 'success');
+       // Prikaži poruku o uspjehu
+        showMessage('Artikal je uklonjen iz vašeg ormara.', 'success');
         
     } catch (error) {
         console.error('Greška:', error);
-        showMessage('Došlo je do greške prilikom uklanjanja artikla iz favorita.', 'error');
+showMessage('Došlo je do greške prilikom uklanjanja artikla iz vašeg ormara.', 'error');
     }
 }
 
@@ -605,6 +754,18 @@ function getOrderStatusName(statusCode) {
 function initializeTabs() {
     const profileTabs = document.querySelectorAll('.profile-tab');
     const profileSections = document.querySelectorAll('.profile-section');
+    
+    // Promijeni naziv taba za favorite u "Moj ormar"
+    const favoritesTab = document.querySelector('.profile-tab[data-tab="favorites"]');
+    if (favoritesTab) {
+        favoritesTab.textContent = "Moj ormar";
+    }
+    
+    // Promijeni naslov sekcije za favorite
+    const favoritesTitle = document.querySelector('#favorites-section h2');
+    if (favoritesTitle) {
+        favoritesTitle.textContent = "Moj ormar";
+    }
     
     // Provjera ima li hash u URL-u (npr. #favorites)
     const hash = window.location.hash.substring(1);
