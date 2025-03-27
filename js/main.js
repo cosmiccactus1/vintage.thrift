@@ -285,6 +285,34 @@ function showLoginPopup(action) {
   }
 }
 
+// Funkcija za provjeru prijavljenog korisnika
+function isUserLoggedIn() {
+  try {
+    const storedUser = localStorage.getItem('prijavljeniKorisnik');
+    if (!storedUser) return false;
+    
+    // Pokušaj parsirati kao JSON
+    try {
+      const jsonUser = JSON.parse(storedUser);
+      // Provjeri postoji li token
+      if (jsonUser && jsonUser.token) {
+        console.log('Korisnik prijavljen s JSON tokenom');
+        return jsonUser.token;
+      }
+    } catch (parseError) {
+      // Ako nije JSON, možda je samo string token
+      if (typeof storedUser === 'string' && storedUser.trim() !== '') {
+        console.log('Korisnik prijavljen sa string tokenom');
+        return storedUser;
+      }
+    }
+  } catch (error) {
+    console.error('Greška pri provjeri prijavljenog korisnika:', error);
+  }
+  
+  return false;
+}
+
 // Dodavanje event listenera za dugmad na karticama proizvoda
 function addProductButtonListeners() {
   // Event listeneri za dugmad za omiljene
@@ -294,11 +322,10 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Dohvati prijavljenog korisnika
-      const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
-      const token = prijavljeniKorisnik.token;
+      // Provjeri je li korisnik prijavljen
+      const token = isUserLoggedIn();
       
-      // Ako korisnik nije prijavljen, prikaži pop-up
+      // Ako korisnik nije prijavljen, prikaži popup
       if (!token) {
         showLoginPopup('favorite');
         return;
@@ -347,11 +374,10 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Dohvati prijavljenog korisnika
-      const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
-      const token = prijavljeniKorisnik.token;
+      // Provjeri je li korisnik prijavljen
+      const token = isUserLoggedIn();
       
-      // Ako korisnik nije prijavljen, prikaži pop-up
+      // Ako korisnik nije prijavljen, prikaži popup
       if (!token) {
         showLoginPopup('cart');
         return;
@@ -467,11 +493,13 @@ function initFilters() {
 
 // Provjera prijavljenog korisnika
 function checkLoggedInUser() {
-  const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+  const isPrijavljen = !!isUserLoggedIn();
+  console.log('Provjera prijavljenog korisnika:', isPrijavljen ? 'Prijavljen' : 'Nije prijavljen');
+  
   const sellButton = document.getElementById('sellButton');
   const profileLink = document.getElementById('profileLink');
   
-  if (prijavljeniKorisnik) {
+  if (isPrijavljen) {
     // Ako je korisnik prijavljen, promijeni link "Prodaj svoju odjeću" da vodi na sell.html
     if (sellButton) sellButton.href = 'sell.html';
     
