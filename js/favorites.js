@@ -24,13 +24,75 @@ async function fetchFavoriteItems() {
         }
         
         const favoritesData = await response.json();
+        console.log('Dohvaćeni favoriti iz API:', favoritesData);
         
-        // Provjeri da li je response prazan ili neispravan
+        // Ako je prazan rezultat, vrati prazno
         if (!Array.isArray(favoritesData) || favoritesData.length === 0) {
             return [];
         }
         
-        // Dohvati potpune podatke za svaki artikal
+        // OPCIJA 1: Korisiti direktno artikle iz localStorage ako postoje
+        try {
+            // Provjeri postoje li artikli u localStorage-u
+            const storedArticles = localStorage.getItem('articles');
+            if (storedArticles) {
+                const allArticles = JSON.parse(storedArticles);
+                
+                // Filtriraj samo artikle koji su u favoritima
+                const favoriteArticles = allArticles.filter(article => {
+                    // Provjeri da li je artikal u favoritima
+                    return favoritesData.some(fav => {
+                        const favId = fav._id || fav.id || (fav.article ? fav.article._id || fav.article.id : null);
+                        return favId === article._id || favId === article.id;
+                    });
+                });
+                
+                console.log('Favoriti iz localStorage artikala:', favoriteArticles);
+                
+                if (favoriteArticles.length > 0) {
+                    return favoriteArticles.map(article => ({
+                        ...article,
+                        favorite: true
+                    }));
+                }
+            }
+        } catch (localStorageError) {
+            console.warn('Greška pri dohvaćanju artikala iz localStorage:', localStorageError);
+        }
+        
+        // OPCIJA 2: Ako ne možemo koristiti localStorage, dohvati sve artikle iz API-ja
+        try {
+            const allArticlesResponse = await fetch('/api/articles', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (allArticlesResponse.ok) {
+                const allArticles = await allArticlesResponse.json();
+                
+                // Filtriraj samo artikle koji su u favoritima
+                const favoriteArticles = allArticles.filter(article => {
+                    return favoritesData.some(fav => {
+                        const favId = fav._id || fav.id || (fav.article ? fav.article._id || fav.article.id : null);
+                        return favId === article._id || favId === article.id;
+                    });
+                });
+                
+                console.log('Favoriti iz API svih artikala:', favoriteArticles);
+                
+                if (favoriteArticles.length > 0) {
+                    return favoriteArticles.map(article => ({
+                        ...article,
+                        favorite: true
+                    }));
+                }
+            }
+        } catch (apiAllArticlesError) {
+            console.warn('Greška pri dohvaćanju svih artikala iz API:', apiAllArticlesError);
+        }
+        
+        // OPCIJA 3: Ako prve dvije opcije ne uspiju, dohvaćamo pojedinačno artikle
         const completeItems = [];
         
         for (const favItem of favoritesData) {
@@ -52,21 +114,34 @@ async function fetchFavoriteItems() {
                 
                 if (itemResponse.ok) {
                     const itemData = await itemResponse.json();
-                    // Označimo da je artikal u favoritima
-                    itemData.favorite = true;
-                    completeItems.push(itemData);
+                    // Dodaj standardna polja ako nedostaju (za slučaj različitih API formata)
+                    const completeItemData = {
+                        ...itemData,
+                        favorite: true,
+                        _id: itemData._id || itemData.id || itemId,
+                        images: itemData.images || (itemData.image ? [itemData.image] : [])
+                    };
+                    completeItems.push(completeItemData);
                 } else {
                     console.warn(`Neuspjelo dohvaćanje detalja za artikal ${itemId}`);
                     // Dodajemo originalni favorit item ako ne možemo dohvatiti detalje
-                    completeItems.push(favItem);
+                    completeItems.push({
+                        ...favItem,
+                        _id: itemId,
+                        favorite: true
+                    });
                 }
             } catch (itemError) {
                 console.error(`Greška pri dohvaćanju artikla ${itemId}:`, itemError);
-                completeItems.push(favItem);
+                completeItems.push({
+                    ...favItem,
+                    _id: itemId,
+                    favorite: true
+                });
             }
         }
         
-        console.log('Dohvaćeni potpuni podaci o favoritima:', completeItems);
+        console.log('Dohvaćeni artikli opcija 3:', completeItems);
         return completeItems;
     } catch (error) {
         console.error('Greška:', error);
@@ -91,19 +166,41 @@ function renderFavoriteItems(items) {
         return;
     }
     
+    console.log('Prikazujem favorite:', items);
+    
     let html = '';
     
     items.forEach(item => {
-        // Provjeri i ispisi podatke o artiklima radi debugginga
-        console.log(`Artikal ${item._id || item.id} slike:`, item.images);
+        // Provjeri da li postoje slike
+        const hasImages = item.images && Array.isArray(item.images) && item.images.length > 0;
+        const imageUrl = hasImages ? item.images[0] : '';
+        
+        // Provjeri za moguće druge formate slika u API odgovoru
+        const alternativeImageUrl = item.image || 
+                                  (item.article && item.article.image) || 
+                                  (item.article && item.article.images && item.article.images.length > 0 ? 
+                                   item.article.images[0] : '');
+        
+        // Odaberi najbolju dostupnu sliku
+        const bestImageUrl = imageUrl || alternativeImageUrl || '';
+        
+        console.log(`Artikal ${item._id || item.id}:`, {
+            title: item.title,
+            hasImages: hasImages,
+            imageUrl: imageUrl,
+            alternativeImageUrl: alternativeImageUrl,
+            bestImageUrl: bestImageUrl
+        });
         
         html += `
             <div class="product-card" data-id="${item._id || item.id}">
                 <div class="product-image">
                     <a href="product.html?id=${item._id || item.id}">
-                        <img src="${item.images && item.images.length > 0 ? item.images[0] : ''}" 
-                             alt="${item.title}"
-                             onerror="this.onerror=null; console.log('Slika se nije učitala:', this.src);">
+                        <img 
+                            src="${bestImageUrl}" 
+                            alt="${item.title || 'Artikal'}"
+                            onerror="this.onerror=null; if(this.src !== 'images/placeholder.jpg') this.src='images/placeholder.jpg';"
+                        >
                     </a>
                     <div class="product-actions">
                         <button class="favorite-btn active" data-id="${item._id || item.id}">
@@ -115,8 +212,14 @@ function renderFavoriteItems(items) {
                     </div>
                 </div>
                 <div class="product-info">
-                    <h3 class="product-title"><a href="product.html?id=${item._id || item.id}">${item.title}</a></h3>
-                    <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                    <h3 class="product-title">
+                        <a href="product.html?id=${item._id || item.id}">
+                            ${item.title || item.name || 'Bez naziva'}
+                        </a>
+                    </h3>
+                    <p class="product-price">
+                        ${parseFloat(item.price || 0).toFixed(2)} KM
+                    </p>
                     <div class="product-meta">
                         <span class="product-size">${item.size || 'N/A'}</span>
                         <span class="product-category">${getCategoryName(item.category)}</span>
