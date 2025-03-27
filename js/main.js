@@ -29,34 +29,6 @@ function updateUrlParam(key, value) {
   window.history.pushState({}, '', url);
 }
 
-// Funkcija koja dohvaća token korisnika iz bilo kojeg dostupnog izvora
-function getUserToken() {
-  let token = null;
-  
-  try {
-    // Prvo provjeri authToken
-    token = localStorage.getItem('authToken');
-    if (token) return token;
-    
-    // Ako nema authToken, provjeri prijavljeniKorisnik
-    const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
-    if (prijavljeniKorisnik) {
-      try {
-        // Pokušaj parsirati kao JSON
-        const parsed = JSON.parse(prijavljeniKorisnik);
-        if (parsed.token) return parsed.token;
-      } catch (e) {
-        // Ako nije JSON, koristi direktno
-        return prijavljeniKorisnik;
-      }
-    }
-  } catch (error) {
-    console.error('Greška pri dohvaćanju tokena:', error);
-  }
-  
-  return null;
-}
-
 // Dohvatanje artikala s API-ja
 async function fetchArtikli() {
   try {
@@ -119,8 +91,25 @@ async function fetchArtikli() {
 // Funkcija za provjeru artikala koji su u favoritima i korpi
 async function checkFavoritesAndCart() {
   try {
-    // Dohvati token korisnika
-    const token = getUserToken();
+    // Dohvati token i provjeri prijavu korisnika
+    let token = null;
+    try {
+      const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+      if (prijavljeniKorisnik) {
+        try {
+          // Pokušaj parsirati kao JSON
+          const parsed = JSON.parse(prijavljeniKorisnik);
+          token = parsed.token;
+        } catch (e) {
+          // Ako nije JSON, koristi direktno
+          if (typeof prijavljeniKorisnik === 'string' && prijavljeniKorisnik.trim() !== '') {
+            token = prijavljeniKorisnik;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Greška pri dohvaćanju iz localStorage-a:', error);
+    }
     
     if (!token) return; // Ako korisnik nije prijavljen, preskoči provjeru
     
@@ -258,17 +247,33 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Dohvati token korisnika
-      const token = getUserToken();
-      
-      // Ako korisnik nije prijavljen
-      if (!token) {
-        alert('Morate biti prijavljeni da biste dodali artikal u favorite.');
-        return;
-      }
-      
       try {
-        console.log(`Sending ${isActive ? 'DELETE' : 'POST'} request to /api/favorites/${id}`);
+        // Dohvati token i provjeri prijavu korisnika
+        let token = null;
+        
+        try {
+          const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+          if (prijavljeniKorisnik) {
+            try {
+              // Pokušaj parsirati kao JSON
+              const parsed = JSON.parse(prijavljeniKorisnik);
+              token = parsed.token;
+            } catch (e) {
+              // Ako nije JSON, koristi direktno
+              if (typeof prijavljeniKorisnik === 'string' && prijavljeniKorisnik.trim() !== '') {
+                token = prijavljeniKorisnik;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Greška pri dohvaćanju iz localStorage-a:', error);
+        }
+        
+        // Ako korisnik nije prijavljen
+        if (!token) {
+          alert('Morate biti prijavljeni da biste dodali artikal u favorite.');
+          return;
+        }
         
         // Poziv API-ja za dodavanje/uklanjanje iz omiljenih
         const response = await fetch(`/api/favorites/${id}`, {
@@ -280,7 +285,6 @@ function addProductButtonListeners() {
         });
         
         if (!response.ok) {
-          console.error('Server odgovor:', await response.text());
           throw new Error('Greška prilikom ažuriranja omiljenih');
         }
         
@@ -313,17 +317,33 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Dohvati token korisnika
-      const token = getUserToken();
-      
-      // Ako korisnik nije prijavljen
-      if (!token) {
-        alert('Morate biti prijavljeni da biste dodali artikal u korpu.');
-        return;
-      }
-      
       try {
-        console.log(`Sending ${isActive ? 'DELETE' : 'POST'} request to /api/cart/${id}`);
+        // Dohvati token i provjeri prijavu korisnika
+        let token = null;
+        
+        try {
+          const prijavljeniKorisnik = localStorage.getItem('prijavljeniKorisnik');
+          if (prijavljeniKorisnik) {
+            try {
+              // Pokušaj parsirati kao JSON
+              const parsed = JSON.parse(prijavljeniKorisnik);
+              token = parsed.token;
+            } catch (e) {
+              // Ako nije JSON, koristi direktno
+              if (typeof prijavljeniKorisnik === 'string' && prijavljeniKorisnik.trim() !== '') {
+                token = prijavljeniKorisnik;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Greška pri dohvaćanju iz localStorage-a:', error);
+        }
+        
+        // Ako korisnik nije prijavljen
+        if (!token) {
+          alert('Morate biti prijavljeni da biste dodali artikal u korpu.');
+          return;
+        }
         
         // Poziv API-ja za dodavanje/uklanjanje iz korpe
         const response = await fetch(`/api/cart/${id}`, {
@@ -335,7 +355,6 @@ function addProductButtonListeners() {
         });
         
         if (!response.ok) {
-          console.error('Server odgovor:', await response.text());
           throw new Error('Greška prilikom ažuriranja korpe');
         }
         
@@ -435,22 +454,15 @@ function initFilters() {
 
 // Provjera prijavljenog korisnika
 function checkLoggedInUser() {
+  // Poboljšana provjera za prijavljenog korisnika
   let prijavljenKorisnik = false;
-  
   try {
-    // Provjeri razne moguće izvore info o prijavi
-    const korisnikData = localStorage.getItem('prijavljeniKorisnik');
-    const authToken = localStorage.getItem('authToken');
-    
-    // Korisnik je prijavljen ako postoji bilo koji od ovih podataka
-    prijavljenKorisnik = !!korisnikData || !!authToken;
-    
-    console.log("Korisnik prijavljen:", prijavljenKorisnik);
-    if (prijavljenKorisnik) {
-      console.log("Token postoji:", !!authToken, "prijavljeniKorisnik postoji:", !!korisnikData);
+    const storedUser = localStorage.getItem('prijavljeniKorisnik');
+    if (storedUser) {
+      prijavljenKorisnik = true;
     }
   } catch (error) {
-    console.error('Greška pri provjeri korisnika:', error);
+    console.error('Greška pri čitanju iz localStorage:', error);
   }
   
   const sellButton = document.getElementById('sellButton');
