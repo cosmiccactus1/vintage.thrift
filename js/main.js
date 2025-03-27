@@ -74,9 +74,6 @@ async function fetchArtikli() {
     artikli = data;
     filteredArtikli = [...artikli];
     
-    // Provjera favorita i košarice za prijavljenog korisnika
-    await checkFavoritesAndCart();
-    
     renderArtikli();
   } catch (error) {
     console.error('Greška:', error);
@@ -85,55 +82,6 @@ async function fetchArtikli() {
         <p>Došlo je do greške prilikom učitavanja artikala. Molimo pokušajte ponovo.</p>
       </div>
     `;
-  }
-}
-
-// Funkcija za provjeru artikala koji su u favoritima i korpi
-async function checkFavoritesAndCart() {
-  try {
-    // Dohvati token iz localStorage
-    const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
-    const token = prijavljeniKorisnik.token;
-    
-    if (!token) return; // Ako korisnik nije prijavljen, preskoči provjeru
-    
-    // Za svaki artikal provjerimo je li u favoritima
-    for (const artikal of artikli) {
-      try {
-        // Provjera favorita
-        const favResponse = await fetch(`/api/favorites/check/${artikal._id}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (favResponse.ok) {
-          const favData = await favResponse.json();
-          artikal.favorite = favData.isFavorite;
-        }
-        
-        // Provjera korpe
-        const cartResponse = await fetch(`/api/cart/check/${artikal._id}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (cartResponse.ok) {
-          const cartData = await cartResponse.json();
-          artikal.inCart = cartData.inCart;
-        }
-      } catch (itemError) {
-        console.warn('Greška pri provjeri artikla:', artikal._id, itemError);
-      }
-    }
-    
-    // Ažuriramo filtrirane artikle
-    filteredArtikli = [...artikli];
-  } catch (error) {
-    console.error('Greška pri provjeri favorita i korpe:', error);
   }
 }
 
@@ -222,12 +170,123 @@ function getCategoryName(categoryCode) {
   return categories[categoryCode] || categoryCode;
 }
 
+// Funkcija za prikaz pop-up prozora za prijavu/registraciju
+function showLoginPopup(action) {
+  // Provjeri postoji li već pop-up
+  let popup = document.getElementById('login-popup');
+  
+  if (!popup) {
+    // Kreiraj pop-up element
+    popup = document.createElement('div');
+    popup.id = 'login-popup';
+    popup.className = 'login-popup';
+    
+    // Postavi sadržaj pop-up-a
+    popup.innerHTML = `
+      <div class="popup-content">
+        <span class="close-popup">&times;</span>
+        <h2>${action === 'favorite' ? 'Dodavanje u favorite' : 'Dodavanje u korpu'}</h2>
+        <p>Za ovu akciju potrebno je da budete prijavljeni.</p>
+        <div class="popup-buttons">
+          <button id="popup-login-btn" class="popup-btn primary-btn">Prijava</button>
+          <button id="popup-register-btn" class="popup-btn secondary-btn">Registracija</button>
+        </div>
+      </div>
+    `;
+    
+    // Dodaj pop-up u body
+    document.body.appendChild(popup);
+    
+    // Dodaj CSS za pop-up ako već ne postoji
+    if (!document.getElementById('popup-styles')) {
+      const style = document.createElement('style');
+      style.id = 'popup-styles';
+      style.textContent = `
+        .login-popup {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0,0,0,0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+        .popup-content {
+          background-color: white;
+          padding: 30px;
+          border-radius: 8px;
+          max-width: 400px;
+          width: 90%;
+          position: relative;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .close-popup {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          font-size: 24px;
+          cursor: pointer;
+          color: #777;
+        }
+        .close-popup:hover {
+          color: #333;
+        }
+        .popup-buttons {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+        }
+        .popup-btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: bold;
+        }
+        .primary-btn {
+          background-color: #4CAF50;
+          color: white;
+        }
+        .secondary-btn {
+          background-color: #f1f1f1;
+          color: #333;
+        }
+        .popup-btn:hover {
+          opacity: 0.9;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    // Dodaj event listenere za dugmad
+    document.querySelector('.close-popup').addEventListener('click', () => {
+      popup.remove();
+    });
+    
+    document.getElementById('popup-login-btn').addEventListener('click', () => {
+      // Redirekcija na stranicu za prijavu
+      window.location.href = 'register.html#login';
+    });
+    
+    document.getElementById('popup-register-btn').addEventListener('click', () => {
+      // Redirekcija na stranicu za registraciju
+      window.location.href = 'register.html';
+    });
+    
+    // Zatvaranje klikom izvan pop-up-a
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) {
+        popup.remove();
+      }
+    });
+  }
+}
+
 // Dodavanje event listenera za dugmad na karticama proizvoda
 function addProductButtonListeners() {
-  // Dohvati token iz localStorage
-  const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
-  const token = prijavljeniKorisnik.token;
-  
   // Event listeneri za dugmad za omiljene
   document.querySelectorAll('.favorite-btn').forEach(button => {
     button.addEventListener('click', async function(e) {
@@ -235,15 +294,17 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Ako korisnik nije prijavljen, preusmjeri na login
+      // Dohvati prijavljenog korisnika
+      const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
+      const token = prijavljeniKorisnik.token;
+      
+      // Ako korisnik nije prijavljen, prikaži pop-up
       if (!token) {
-        window.location.href = 'login.html';
+        showLoginPopup('favorite');
         return;
       }
       
       try {
-        console.log(`Sending ${isActive ? 'DELETE' : 'POST'} request to /api/favorites/${id}`);
-        
         // Poziv API-ja za dodavanje/uklanjanje iz omiljenih
         const response = await fetch(`/api/favorites/${id}`, {
           method: isActive ? 'DELETE' : 'POST',
@@ -254,7 +315,6 @@ function addProductButtonListeners() {
         });
         
         if (!response.ok) {
-          console.error('Server odgovor:', await response.text());
           throw new Error('Greška prilikom ažuriranja omiljenih');
         }
         
@@ -287,15 +347,17 @@ function addProductButtonListeners() {
       const id = this.getAttribute('data-id');
       const isActive = this.classList.contains('active');
       
-      // Ako korisnik nije prijavljen, preusmjeri na login
+      // Dohvati prijavljenog korisnika
+      const prijavljeniKorisnik = JSON.parse(localStorage.getItem('prijavljeniKorisnik') || '{}');
+      const token = prijavljeniKorisnik.token;
+      
+      // Ako korisnik nije prijavljen, prikaži pop-up
       if (!token) {
-        window.location.href = 'login.html';
+        showLoginPopup('cart');
         return;
       }
       
       try {
-        console.log(`Sending ${isActive ? 'DELETE' : 'POST'} request to /api/cart/${id}`);
-        
         // Poziv API-ja za dodavanje/uklanjanje iz korpe
         const response = await fetch(`/api/cart/${id}`, {
           method: isActive ? 'DELETE' : 'POST',
@@ -306,7 +368,6 @@ function addProductButtonListeners() {
         });
         
         if (!response.ok) {
-          console.error('Server odgovor:', await response.text());
           throw new Error('Greška prilikom ažuriranja korpe');
         }
         
