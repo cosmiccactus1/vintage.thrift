@@ -42,11 +42,20 @@ async function parseBody(req) {
 
 // Helper funkcija za parsiranje URL-a
 function parseURL(req) {
-  console.log('Request URL:', req.url);
+  console.log('Original Request URL:', req.url);
+  
+  // Prvo uklonite bilo koji prefiks "/api/cart" ako postoji
+  let path = req.url;
+  if (path.startsWith('/api/cart')) {
+    path = path.replace('/api/cart', '');
+  }
+  
+  console.log('Cleaned path for parsing:', path);
   
   // Ako URL sadrži /check/ to znači da je ruta za provjeru korpe
-  if (req.url.includes('/check/')) {
-    const id = req.url.split('/check/')[1];
+  if (path.includes('/check/')) {
+    const id = path.split('/check/')[1];
+    console.log('Check cart request for article ID:', id);
     return {
       type: 'check_cart',
       articleId: id
@@ -54,15 +63,17 @@ function parseURL(req) {
   }
   
   // Ako je prazan URL ili samo /, to je dohvaćanje svih artikala iz korpe ili pražnjenje korpe
-  if (req.url === '/' || req.url === '') {
+  if (path === '/' || path === '') {
+    console.log('All cart items request');
     return {
       type: 'all_cart'
     };
   }
   
   // Ako imamo ID u putanji, to je za dodavanje/brisanje jednog artikla
-  const match = req.url.match(/\/([^\/]+)$/);
+  const match = path.match(/\/([^\/]+)$/);
   if (match) {
+    console.log('Single article cart operation, ID:', match[1]);
     return {
       type: 'single_article',
       articleId: match[1]
@@ -70,12 +81,15 @@ function parseURL(req) {
   }
   
   // Default: nepoznata putanja
+  console.log('Unknown path type');
   return {
     type: 'unknown'
   };
 }
 
 module.exports = async (req, res) => {
+  console.log('Cart API request received:', req.method, req.url);
+  
   // Podešavanje CORS headera
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -94,6 +108,7 @@ module.exports = async (req, res) => {
     
     // Provjera autentikacije (osim za check_cart)
     const userId = await verifyToken(req);
+    console.log('Authenticated user ID:', userId);
     
     if (parsedURL.type !== 'check_cart' && !userId) {
       res.status(401).json({ message: 'Nije autorizovano' });
@@ -102,6 +117,8 @@ module.exports = async (req, res) => {
     
     // GET - Dohvaćanje svih artikala iz korpe korisnika
     if (req.method === 'GET' && parsedURL.type === 'all_cart') {
+      console.log('Fetching all cart items for user:', userId);
+      
       // Dohvatanje artikala iz korpe s podacima o artiklima
       const { data, error } = await supabase
         .from('cart_items')
@@ -112,7 +129,12 @@ module.exports = async (req, res) => {
         `)
         .eq('user_id', userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching cart items:', error);
+        throw error;
+      }
+      
+      console.log('Found cart items:', data ? data.length : 0);
       
       // Transformacija podataka za frontend
       const formattedData = data.map(item => ({
@@ -128,11 +150,13 @@ module.exports = async (req, res) => {
     // GET - Provjera je li artikal u korpi
     if (req.method === 'GET' && parsedURL.type === 'check_cart') {
       if (!userId) {
-        res.status(200).json({ isInCart: false });
+        console.log('User not authenticated, returning not in cart');
+        res.status(200).json({ inCart: false });
         return;
       }
       
       const articleId = parsedURL.articleId;
+      console.log('Checking if article is in cart:', articleId, 'for user:', userId);
       
       const { data, error } = await supabase
         .from('cart_items')
@@ -141,15 +165,20 @@ module.exports = async (req, res) => {
         .eq('article_id', articleId)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking cart item:', error);
+        throw error;
+      }
       
-      res.status(200).json({ isInCart: !!data });
+      console.log('Article in cart:', !!data);
+      res.status(200).json({ inCart: !!data });
       return;
     }
     
     // POST - Dodavanje artikla u korpu
     if (req.method === 'POST' && parsedURL.type === 'single_article') {
       const articleId = parsedURL.articleId;
+      console.log('Adding article to cart:', articleId, 'for user:', userId);
       
       // Provjera da li artikal postoji
       const { data: articleExists, error: articleError } = await supabase
@@ -160,8 +189,10 @@ module.exports = async (req, res) => {
       
       if (articleError) {
         if (articleError.code === 'PGRST116') { // Record not found error
+          console.log('Article not found:', articleId);
           res.status(404).json({ message: 'Artikal nije pronađen' });
         } else {
+          console.error('Error checking article existence:', articleError);
           throw articleError;
         }
         return;
@@ -175,9 +206,13 @@ module.exports = async (req, res) => {
         .eq('article_id', articleId)
         .maybeSingle();
       
-      if (checkError) throw checkError;
+      if (checkError) {
+        console.error('Error checking existing cart item:', checkError);
+        throw checkError;
+      }
       
       if (existingItem) {
+        console.log('Article already in cart');
         res.status(200).json({ message: 'Artikal je već u korpi' });
         return;
       }
@@ -190,8 +225,12 @@ module.exports = async (req, res) => {
           article_id: articleId
         });
       
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error adding to cart:', insertError);
+        throw insertError;
+      }
       
+      console.log('Article added to cart successfully');
       res.status(201).json({ message: 'Artikal je dodan u korpu' });
       return;
     }
@@ -199,6 +238,7 @@ module.exports = async (req, res) => {
     // DELETE - Uklanjanje artikla iz korpe
     if (req.method === 'DELETE' && parsedURL.type === 'single_article') {
       const articleId = parsedURL.articleId;
+      console.log('Removing article from cart:', articleId, 'for user:', userId);
       
       const { error } = await supabase
         .from('cart_items')
@@ -206,26 +246,37 @@ module.exports = async (req, res) => {
         .eq('user_id', userId)
         .eq('article_id', articleId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing from cart:', error);
+        throw error;
+      }
       
+      console.log('Article removed from cart successfully');
       res.status(200).json({ message: 'Artikal je uklonjen iz korpe' });
       return;
     }
     
     // DELETE - Uklanjanje svih artikala iz korpe (pražnjenje korpe)
     if (req.method === 'DELETE' && parsedURL.type === 'all_cart') {
+      console.log('Emptying cart for user:', userId);
+      
       const { error } = await supabase
         .from('cart_items')
         .delete()
         .eq('user_id', userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error emptying cart:', error);
+        throw error;
+      }
       
+      console.log('Cart emptied successfully');
       res.status(200).json({ message: 'Korpa je ispražnjena' });
       return;
     }
     
     // Ako nijedna ruta ne odgovara
+    console.log('Route not found:', req.method, req.url);
     res.status(404).json({ message: 'Ruta nije pronađena' });
     
   } catch (error) {
