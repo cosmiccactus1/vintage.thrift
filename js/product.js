@@ -730,6 +730,61 @@
         return conditions[conditionCode] || conditionCode || 'Nije navedeno';
     }
 
+    // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
+    async function toggleFavorite() {
+        if (!currentProduct) return;
+        
+        // Provjera je li korisnik prijavljen
+        if (!isUserLoggedIn()) {
+            alert('Morate biti prijavljeni da biste dodali artikal u favorite.');
+            localStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        if (!favoriteBtn) return;
+        
+        const isFavorite = favoriteBtn.classList.contains('active');
+        
+        try {
+            // Poziv API-ja za dodavanje/uklanjanje iz favorita
+            const response = await fetch(`/api/favorites/${currentProduct._id || currentProduct.id}`, {
+                method: isFavorite ? 'DELETE' : 'POST',
+                headers: getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('Niste prijavljeni. Molimo prijavite se.');
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    window.location.href = 'login.html';
+                    return;
+                }
+                throw new Error('Greška prilikom ažuriranja favorita');
+            }
+            
+            // Ažuriranje UI-a
+            favoriteBtn.classList.toggle('active');
+            const icon = favoriteBtn.querySelector('i');
+            const text = favoriteBtn.querySelector('span');
+            
+            if (isFavorite) {
+                icon.classList.replace('fas', 'far');
+                text.textContent = 'Dodaj u favorite';
+            } else {
+                icon.classList.replace('far', 'fas');
+                text.textContent = 'Ukloni iz favorita';
+            }
+            
+            alert(isFavorite ? 'Artikal je uklonjen iz favorita.' : 'Artikal je dodan u favorite.');
+            
+        } catch (error) {
+            console.error('Greška:', error);
+            alert('Došlo je do greške prilikom ažuriranja favorita.');
+        }
+    }
+
     // Funkcija za kupovinu proizvoda
     async function toggleCart() {
         if (!currentProduct) return;
@@ -773,6 +828,32 @@
         } catch (error) {
             console.error('Greška:', error);
             alert('Došlo je do greške. Molimo pokušajte ponovo.');
+        }
+    }
+
+    // Funkcija za dohvaćanje artikala korisnika
+    async function fetchSellerItems(userId) {
+        try {
+            if (!userId) return [];
+            
+            console.log("Dohvaćam artikle prodavača:", userId);
+            
+            const response = await fetch(`/api/articles/user/${userId}`);
+            if (!response.ok) {
+                console.error(`Error ${response.status} pri dohvatu artikala korisnika`);
+                return [];
+            }
+            
+            const data = await response.json();
+            console.log("Artikli prodavača:", data);
+            
+            // Filtriraj da ne uključi trenutni artikal
+            return Array.isArray(data) 
+                ? data.filter(item => (item._id !== productId && item.id !== productId))
+                : [];
+        } catch (error) {
+            console.error('Greška pri dohvaćanju artikala korisnika:', error);
+            return [];
         }
     }
 
