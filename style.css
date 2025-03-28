@@ -1412,3 +1412,150 @@ footer {
 .view-all-button:hover {
     background-color: #45a049;
 }
+/* Poboljšani dizajn stranice proizvoda */
+.product-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.product-gallery {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.product-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.product-title {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.product-price {
+    font-size: 24px;
+    color: #e25454;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.product-metadata {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-left: 4px solid #4CAF50;
+}
+
+.metadata-item {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.metadata-label {
+    width: 120px;
+    font-weight: 500;
+    color: #555;
+}
+
+.product-description {
+    margin-bottom: 30px;
+}
+
+.description-content {
+    line-height: 1.8;
+    color: #666;
+}
+
+/* Poboljšani seller info */
+.seller-info {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.seller-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: a60px;
+    height: 60px;
+    font-size: 30px;
+    margin-bottom: 15px;
+}
+
+.seller-name {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.seller-products {
+    margin-top: 15px;
+}
+
+/* Poboljšani bundle */
+.bundle-section {
+    background: #f0f7f0;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    border: 1px solid #e0f0e0;
+}
+
+.bundle-header {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.bundle-header h2 {
+    font-size: 22px;
+    color: #4CAF50;
+}
+
+.create-bundle-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.related-items-grid {
+    margin-top: 25px;
+}
+
+@media (max-width: 768px) {
+    .product-detail {
+        flex-direction: column;
+    }
+    
+    .product-gallery, .product-info {
+        max-width: 100%;
+    }
+    
+    .product-actions {
+        flex-direction: column;
+    }
+    
+    .bundle-header {
+        flex-direction: column;
+    }
+}
