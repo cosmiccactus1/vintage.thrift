@@ -935,3 +935,258 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 })(); // Kraj IIFE (Immediately Invoked Function Expression)
+// Dodavanje CSS stilova programski na kraj product.js fajla
+const productPageStyles = document.createElement('style');
+productPageStyles.textContent = `
+/* Bundle popup stilovi */
+.bundle-popup-hidden {
+    display: none !important;
+}
+
+.bundle-popup-visible {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.bundle-popup {
+    background-color: white;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.bundle-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.bundle-popup-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.bundle-popup-close {
+    font-size: 24px;
+    color: #777;
+    cursor: pointer;
+}
+
+.bundle-popup-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.bundle-popup-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.add-to-cart-bundle-btn {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-to-cart-bundle-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.add-to-cart-bundle-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.bundle-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.bundle-item {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.bundle-item.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.bundle-item-image {
+    height: 150px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.bundle-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.bundle-item-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bundle-item-price {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.bundle-item-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.bundle-checkbox {
+    position: absolute;
+    opacity: 0;
+}
+
+.checkbox-custom {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+}
+
+.bundle-checkbox:checked + label .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Poboljšanja za stranicu proizvoda */
+.product-metadata {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    border-left: 4px solid #4CAF50;
+}
+
+.seller-info {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    text-align: center;
+}
+
+.seller-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.product-price {
+    font-size: 24px;
+    font-weight: 500;
+    color: #e25454;
+    margin-bottom: 20px;
+}
+
+.bundle-section {
+    background-color: #f0f7f0;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    border: 1px solid #e0f0e0;
+    margin: 25px 0;
+}
+
+.bundle-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bundle-header h2 {
+    margin-bottom: 15px;
+    color: #4CAF50;
+}
+
+.create-bundle-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.create-bundle-btn:hover {
+    background-color: #45a049;
+}
+
+@media (max-width: 768px) {
+    .bundle-popup {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .bundle-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .bundle-item-image {
+        height: 120px;
+    }
+}
+`;
+
+// Dodaj stilove na kraj dokumenta
+document.head.appendChild(productPageStyles);
