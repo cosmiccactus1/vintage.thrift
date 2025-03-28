@@ -364,11 +364,11 @@
 
 /* Bundle popup */
 .bundle-popup-hidden {
-    display: none;
+    display: none !important;
 }
 
 .bundle-popup-visible {
-    display: flex;
+    display: flex !important;
     position: fixed;
     top: 0;
     left: 0;
@@ -531,7 +531,7 @@
     border-top: 1px solid #eee;
 }
 
-.selected-items-count {
+#selected-items-count {
     color: #666;
     font-size: 14px;
 }
@@ -597,4 +597,11 @@
     .bundle-item-image {
         height: 120px;
     }
+}
+
+/* Fix za loading indikator */
+.loading, .loading-items {
+    text-align: center;
+    padding: 20px;
+    color: #777;
 }
