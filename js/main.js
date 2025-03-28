@@ -201,13 +201,10 @@ function renderArtikli() {
         <div class="product-image">
           <img src="${artikal.images && artikal.images.length > 0 ? artikal.images[0] : 'images/placeholder.jpg'}" alt="${artikal.title}">
           <div class="product-actions">
-            <button class="favorite-btn ${artikal.favorite ? 'active' : ''}" data-id="${artikal._id}">
-              <i class="fa${artikal.favorite ? 's' : 'r'} fa-heart"></i>
-            </button>
-            <button class="cart-btn ${artikal.inCart ? 'active' : ''}" data-id="${artikal._id}">
-              <i class="fa${artikal.inCart ? 's' : 'r'} fa-shopping-bag"></i>
-            </button>
-          </div>
+  <button class="favorite-btn ${artikal.favorite ? 'active' : ''}" data-id="${artikal._id}">
+    <i class="fa${artikal.favorite ? 's' : 'r'} fa-heart"></i>
+  </button>
+</div>
         </div>
         <div class="product-info">
           <h3 class="product-title"><a href="product.html?id=${artikal._id}">${artikal.title}</a></h3>
@@ -305,63 +302,7 @@ function addProductButtonListeners() {
       }
     });
   });
-  
-  // Event listeneri za dugmad za korpu
-  document.querySelectorAll('.cart-btn').forEach(button => {
-    button.addEventListener('click', async function(e) {
-      e.preventDefault();
-      const id = this.getAttribute('data-id');
-      const isActive = this.classList.contains('active');
-      
-      // Dohvati token korisnika
-      const token = getUserToken();
-      
-      // Ako korisnik nije prijavljen
-      if (!token) {
-        alert('Morate biti prijavljeni da biste dodali artikal u korpu.');
-        return;
-      }
-      
-      try {
-        console.log(`Sending ${isActive ? 'DELETE' : 'POST'} request to /api/cart/${id}`);
-        
-        // Poziv API-ja za dodavanje/uklanjanje iz korpe
-        const response = await fetch(`/api/cart/${id}`, {
-          method: isActive ? 'DELETE' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          console.error('Server odgovor:', await response.text());
-          throw new Error('Greška prilikom ažuriranja korpe');
-        }
-        
-        // Ažuriranje UI-a
-        this.classList.toggle('active');
-        const icon = this.querySelector('i');
-        if (isActive) {
-          icon.classList.replace('fas', 'far');
-        } else {
-          icon.classList.replace('far', 'fas');
-        }
-        
-        // Ažuriranje lokalnih podataka
-        const artikal = artikli.find(a => a._id === id);
-        if (artikal) {
-          artikal.inCart = !isActive;
-        }
-        
-      } catch (error) {
-        console.error('Greška:', error);
-        alert('Došlo je do greške prilikom ažuriranja korpe.');
-      }
-    });
-  });
-}
-
+	 }
 // Inicijalizacija filtera
 function initFilters() {
   // Postavi aktivne filtere na osnovu URL parametara
