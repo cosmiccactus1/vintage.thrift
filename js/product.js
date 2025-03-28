@@ -64,7 +64,7 @@
         }
     }
 
-   // Dohvaćanje informacija o korisniku
+    // Dohvaćanje informacija o korisniku
     async function fetchUserInfo(userId) {
         if (!userId) return null;
         
@@ -214,6 +214,17 @@
         const isCurrentUserSeller = currentUserId === product.user_id;
         const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Korisnik');
         
+        // HTML za bundle sekciju
+        const bundleHtml = `
+        <div class="bundle-section">
+            <h2>Uštedi na dostavi!</h2>
+            <p>Kreiraj bundle - pogledaj još artikala od ovog korisnika. Možda ti se još nešto svidi.</p>
+            <div id="user-items-preview" class="user-items-preview">
+                <div class="loading-items">Učitavanje artikala...</div>
+            </div>
+        </div>
+        `;
+        
         // HTML za prodavača
         const sellerHtml = `
         <div class="seller-info">
@@ -251,9 +262,9 @@
                         <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
                         <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
                     </button>
-                    <button class="cart-btn ${isInCart ? 'active' : ''}" id="cartBtn">
-                        <i class="fa${isInCart ? 's' : 'r'} fa-shopping-bag"></i>
-                        <span>${isInCart ? 'Ukloni iz korpe' : 'Dodaj u korpu'}</span>
+                    <button class="cart-btn" id="cartBtn">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Kupi odmah</span>
                     </button>
                 </div>
                 
@@ -274,13 +285,13 @@
                         <span class="metadata-label">Stanje:</span>
                         <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
                     </div>
-                   ${product.brand ? `
-<div class="metadata-item">
-    <span class="metadata-label">Brend:</span>
-    <span class="metadata-value">
-        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
-    </span>
-</div>` : ''}
+                    ${product.brand ? `
+                    <div class="metadata-item">
+                        <span class="metadata-label">Brend:</span>
+                        <span class="metadata-value">
+                            <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+                        </span>
+                    </div>` : ''}
                     ${product.color ? `
                     <div class="metadata-item">
                         <span class="metadata-label">Boja:</span>
@@ -305,6 +316,7 @@
                 </div>
                 
                 ${sellerHtml}
+                ${bundleHtml}
             </div>
         `;
         
@@ -458,44 +470,46 @@
         }
     }
 
-    // Funkcija za dodavanje/uklanjanje proizvoda iz korpe
+    // Funkcija za kupovinu proizvoda
     async function toggleCart() {
         if (!currentProduct) return;
         
-        const cartBtn = document.getElementById('cartBtn');
-        if (!cartBtn) return;
-        
-        const isInCart = cartBtn.classList.contains('active');
-        
         try {
-            // Poziv API-ja za dodavanje/uklanjanje iz korpe
-            const response = await fetch(`/api/cart/${currentProduct._id || currentProduct.id}`, {
-                method: isInCart ? 'DELETE' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            // Spremi trenutni proizvod u localStorage za korištenje na checkout stranici
+            localStorage.setItem('checkoutItem', JSON.stringify(currentProduct));
             
-            if (!response.ok) {
-                throw new Error('Greška prilikom ažuriranja korpe');
-            }
-            
-            // Ažuriranje UI-a
-            cartBtn.classList.toggle('active');
-            const icon = cartBtn.querySelector('i');
-            const text = cartBtn.querySelector('span');
-            
-            if (isInCart) {
-                icon.classList.replace('fas', 'far');
-                text.textContent = 'Dodaj u korpu';
-            } else {
-                icon.classList.replace('far', 'fas');
-                text.textContent = 'Ukloni iz korpe';
-            }
+            // Preusmjeri korisnika na checkout stranicu
+            window.location.href = 'cart.html?checkout=direct';
             
         } catch (error) {
             console.error('Greška:', error);
-            alert('Došlo je do greške prilikom ažuriranja korpe.');
+            alert('Došlo je do greške. Molimo pokušajte ponovo.');
+        }
+    }
+
+    // Funkcija za dohvaćanje artikala korisnika
+    async function fetchSellerItems(userId) {
+        try {
+            if (!userId) return [];
+            
+            console.log("Dohvaćam artikle prodavača:", userId);
+            
+            const response = await fetch(`/api/articles/user/${userId}`);
+            if (!response.ok) {
+                console.error(`Error ${response.status} pri dohvatu artikala korisnika`);
+                return [];
+            }
+            
+            const data = await response.json();
+            console.log("Artikli prodavača:", data);
+            
+            // Filtriraj da ne uključi trenutni artikal
+            return Array.isArray(data) 
+                ? data.filter(item => (item._id !== productId && item.id !== productId))
+                : [];
+        } catch (error) {
+            console.error('Greška pri dohvaćanju artikala korisnika:', error);
+            return [];
         }
     }
 
@@ -545,6 +559,54 @@
         
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
+        
+        // Učitavanje artikala istog prodavača za bundle sekciju
+        if (product.user_id) {
+            fetchSellerItems(product.user_id).then(sellerItems => {
+                const container = document.getElementById('user-items-preview');
+                if (!container) return;
+                
+                if (sellerItems.length === 0) {
+                    container.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
+                    return;
+                }
+                
+                // Prikaži maksimalno 4 artikla
+                const itemsToShow = sellerItems.slice(0, 4);
+                let html = '<div class="related-items-grid">';
+                
+                itemsToShow.forEach(item => {
+                    html += `
+                        <div class="related-item">
+                            <a href="product.html?id=${item._id || item.id}">
+                                <div class="related-item-image">
+                                    <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
+                                         alt="${item.title}">
+                                </div>
+                                <div class="related-item-info">
+                                    <h3>${item.title}</h3>
+                                    <p class="related-item-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                if (sellerItems.length > 4) {
+                    html += `
+                        <div class="view-all-items">
+                            <a href="index.html?seller=${product.user_id}" class="view-all-button">
+                                Pogledaj sve artikle
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            });
+        }
         
         // Postavljanje naslova stranice
         document.title = `${product.title} - Vintage Thrift Store`;
