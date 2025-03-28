@@ -100,6 +100,11 @@
         }
     }
 
+    // Provjera je li korisnik prijavljen
+    function isUserLoggedIn() {
+        return !!localStorage.getItem('authToken');
+    }
+
     // Provjera statusa favorita za proizvod
     async function fetchFavoriteStatus(id) {
         try {
@@ -214,11 +219,14 @@
         const isCurrentUserSeller = currentUserId === product.user_id;
         const sellerName = isCurrentUserSeller ? 'Vi (Vaš artikal)' : (product.sellerName || 'Korisnik');
         
-        // HTML za bundle sekciju
+        // HTML za bundle sekciju - sada s buttonom
         const bundleHtml = `
         <div class="bundle-section">
-            <h2>Uštedi na dostavi!</h2>
-            <p>Kreiraj bundle - pogledaj još artikala od ovog korisnika. Možda ti se još nešto svidi.</p>
+            <div class="bundle-header">
+                <h2>Uštedi na dostavi!</h2>
+                <a href="bundle.html?seller=${product.user_id}" class="create-bundle-btn">Kreiraj bundle</a>
+            </div>
+            <p>Pogledaj još artikala od ovog korisnika. Možda ti se još nešto svidi.</p>
             <div id="user-items-preview" class="user-items-preview">
                 <div class="loading-items">Učitavanje artikala...</div>
             </div>
@@ -433,6 +441,13 @@
     async function toggleFavorite() {
         if (!currentProduct) return;
         
+        // Provjera je li korisnik prijavljen
+        if (!isUserLoggedIn()) {
+            alert('Morate biti prijavljeni da biste dodali artikal u favorite.');
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+            return;
+        }
+        
         const favoriteBtn = document.getElementById('favoriteBtn');
         if (!favoriteBtn) return;
         
@@ -443,7 +458,8 @@
             const response = await fetch(`/api/favorites/${currentProduct._id || currentProduct.id}`, {
                 method: isFavorite ? 'DELETE' : 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
             
@@ -473,6 +489,13 @@
     // Funkcija za kupovinu proizvoda
     async function toggleCart() {
         if (!currentProduct) return;
+        
+        // Provjera je li korisnik prijavljen
+        if (!isUserLoggedIn()) {
+            alert('Morate biti prijavljeni da biste kupili artikal.');
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+            return;
+        }
         
         try {
             // Spremi trenutni proizvod u localStorage za korištenje na checkout stranici
