@@ -301,75 +301,77 @@
         </div>
         `;
         
-        // Generiranje HTML-a za prikaz proizvoda
+        // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
         container.innerHTML = `
-            <div class="product-gallery">
-                ${imagesHTML}
-            </div>
-            <div class="product-info">
-                <h1 class="product-title">${product.title}</h1>
-                <div class="product-price">${formattedPrice} KM</div>
-                
-                <div class="product-actions">
-                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
-                        <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
-                        <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
-                    </button>
-                    <button class="cart-btn" id="cartBtn">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span>Kupi odmah</span>
-                    </button>
+            <div class="product-detail-container">
+                <div class="product-gallery">
+                    ${imagesHTML}
                 </div>
-                
-                <div class="product-metadata">
-                    <div class="metadata-item">
-                        <span class="metadata-label">Kategorija:</span>
-                        <span class="metadata-value">${categoryName}</span>
+                <div class="product-info">
+                    <h1 class="product-title">${product.title}</h1>
+                    <div class="product-price">${formattedPrice} KM</div>
+                    
+                    <div class="product-actions">
+                        <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
+                            <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
+                            <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
+                        </button>
+                        <button class="cart-btn" id="cartBtn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Kupi odmah</span>
+                        </button>
                     </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Veličina:</span>
-                        <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
+                    
+                    <div class="product-metadata">
+                        <div class="metadata-item">
+                            <span class="metadata-label">Kategorija:</span>
+                            <span class="metadata-value">${categoryName}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Veličina:</span>
+                            <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Sezona:</span>
+                            <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Stanje:</span>
+                            <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
+                        </div>
+                        ${product.brand ? `
+                        <div class="metadata-item">
+                            <span class="metadata-label">Brend:</span>
+                            <span class="metadata-value">
+                                <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+                            </span>
+                        </div>` : ''}
+                        ${product.color ? `
+                        <div class="metadata-item">
+                            <span class="metadata-label">Boja:</span>
+                            <span class="metadata-value">${product.color}</span>
+                        </div>` : ''}
+                        ${product.location ? `
+                        <div class="metadata-item">
+                            <span class="metadata-label">Lokacija:</span>
+                            <span class="metadata-value">${product.location}</span>
+                        </div>` : ''}
+                        <div class="metadata-item">
+                            <span class="metadata-label">Objavljeno:</span>
+                            <span class="metadata-value">${formattedDate}</span>
+                        </div>
                     </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Sezona:</span>
-                        <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
+                    
+                    <div class="product-description">
+                        <h2>Opis</h2>
+                        <div class="description-content">
+                            ${product.description || 'Nema opisa za ovaj proizvod.'}
+                        </div>
                     </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Stanje:</span>
-                        <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
-                    </div>
-                    ${product.brand ? `
-                    <div class="metadata-item">
-                        <span class="metadata-label">Brend:</span>
-                        <span class="metadata-value">
-                            <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
-                        </span>
-                    </div>` : ''}
-                    ${product.color ? `
-                    <div class="metadata-item">
-                        <span class="metadata-label">Boja:</span>
-                        <span class="metadata-value">${product.color}</span>
-                    </div>` : ''}
-                    ${product.location ? `
-                    <div class="metadata-item">
-                        <span class="metadata-label">Lokacija:</span>
-                        <span class="metadata-value">${product.location}</span>
-                    </div>` : ''}
-                    <div class="metadata-item">
-                        <span class="metadata-label">Objavljeno:</span>
-                        <span class="metadata-value">${formattedDate}</span>
-                    </div>
+                    
+                    ${sellerHtml}
+                    ${bundleHtml}
                 </div>
-                
-                <div class="product-description">
-                    <h2>Opis</h2>
-                    <div class="description-content">
-                        ${product.description || 'Nema opisa za ovaj proizvod.'}
-                    </div>
-                </div>
-                
-                ${sellerHtml}
-                ${bundleHtml}
             </div>
         `;
         
@@ -454,6 +456,11 @@
         // Resetiranje odabranih artikala
         selectedBundleItems = [];
         
+        // Dodaj trenutni proizvod u odabrane artikle odmah
+        if (currentProduct) {
+            selectedBundleItems.push(currentProduct);
+        }
+        
         // Otvaranje pop-upa
         const bundlePopupContainer = document.getElementById('bundle-popup-container');
         bundlePopupContainer.classList.remove('bundle-popup-hidden');
@@ -480,12 +487,6 @@
         if (addToCartBundleBtn) {
             addToCartBundleBtn.addEventListener('click', addBundleToCart);
         }
-        
-        // Prikazivanje trenutnog proizvoda kao već odabranog
-        if (currentProduct) {
-            selectedBundleItems.push(currentProduct);
-            updateSelectedItemsCount();
-        }
     }
     
     // Funkcija za zatvaranje bundle pop-upa
@@ -508,45 +509,80 @@
             const bundleItemsContainer = document.getElementById('bundle-items-container');
             if (!bundleItemsContainer) return;
             
-            if (sellerItems.length === 0) {
-                bundleItemsContainer.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
-                return;
-            }
-            
             // Prikazivanje svih artikala
             let html = '<div class="bundle-items-grid">';
             
-            sellerItems.forEach(item => {
-                // Provjera je li artikal trenutni proizvod
-                const isCurrentItem = item._id === productId || item.id === productId;
+            // Prvo dodaj trenutni proizvod kao već odabran
+            if (currentProduct) {
+                const prodId = currentProduct._id || currentProduct.id;
+                const imgSrc = currentProduct.images && currentProduct.images.length > 0 ? 
+                                currentProduct.images[0] : 'https://via.placeholder.com/150x150?text=No+Image';
                 
                 html += `
-                    <div class="bundle-item ${isCurrentItem ? 'selected' : ''}" data-id="${item._id || item.id}">
+                    <div class="bundle-item selected" data-id="${prodId}">
                         <div class="bundle-item-image">
-                            <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
-                                 alt="${item.title}">
+                            <img src="${imgSrc}" alt="${currentProduct.title}">
                         </div>
                         <div class="bundle-item-info">
-                            <h3>${item.title}</h3>
-                            <p class="bundle-item-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                            <h3>${currentProduct.title}</h3>
+                            <p class="bundle-item-price">${parseFloat(currentProduct.price).toFixed(2)} KM</p>
                         </div>
                         <div class="bundle-item-checkbox">
-                            <input type="checkbox" ${isCurrentItem ? 'checked disabled' : ''} 
-                                   class="bundle-checkbox" id="bundle-item-${item._id || item.id}">
-                            <label for="bundle-item-${item._id || item.id}">
+                            <input type="checkbox" checked disabled 
+                                   class="bundle-checkbox" id="bundle-item-${prodId}">
+                            <label for="bundle-item-${prodId}">
                                 <span class="checkbox-custom"></span>
                             </label>
                         </div>
                     </div>
                 `;
+            }
+            
+            // Dodaj ostale artikle istog prodavača
+            sellerItems.forEach(item => {
+                // Provjera je li artikal trenutni proizvod
+                const isCurrentItem = item._id === productId || item.id === productId;
+                
+                // Dodaj samo ako nije trenutni proizvod
+                if (!isCurrentItem) {
+                    const itemId = item._id || item.id;
+                    const imgSrc = item.images && item.images.length > 0 ? 
+                                  item.images[0] : 'https://via.placeholder.com/150x150?text=No+Image';
+                                  
+                    html += `
+                        <div class="bundle-item" data-id="${itemId}">
+                            <div class="bundle-item-image">
+                                <img src="${imgSrc}" alt="${item.title}">
+                            </div>
+                            <div class="bundle-item-info">
+                                <h3>${item.title}</h3>
+                                <p class="bundle-item-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                            </div>
+                            <div class="bundle-item-checkbox">
+                                <input type="checkbox" class="bundle-checkbox" id="bundle-item-${itemId}">
+                                <label for="bundle-item-${itemId}">
+                                    <span class="checkbox-custom"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                }
             });
             
             html += '</div>';
             
+            // Ako nema drugih artikala od korisnika osim trenutnog
+            if (sellerItems.length === 0 && !currentProduct) {
+                bundleItemsContainer.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
+                return;
+            } else if (sellerItems.length === 0 && currentProduct) {
+                html += '<p>Ovaj korisnik nema drugih artikala za dodavanje u bundle.</p>';
+            }
+            
             bundleItemsContainer.innerHTML = html;
             
             // Dodavanje event listenera za checkboxove
-            document.querySelectorAll('.bundle-checkbox').forEach(checkbox => {
+            document.querySelectorAll('.bundle-checkbox:not(:disabled)').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     const itemId = this.closest('.bundle-item').getAttribute('data-id');
                     const item = sellerItems.find(item => (item._id === itemId || item.id === itemId));
@@ -564,6 +600,9 @@
                     updateSelectedItemsCount();
                 });
             });
+            
+            // Ažuriraj brojač odabranih artikala kad se učitaju
+            updateSelectedItemsCount();
             
         } catch (error) {
             console.error('Greška pri učitavanju artikala za bundle:', error);
@@ -691,61 +730,6 @@
         return conditions[conditionCode] || conditionCode || 'Nije navedeno';
     }
 
-    // Funkcija za dodavanje/uklanjanje proizvoda iz favorita
-    async function toggleFavorite() {
-        if (!currentProduct) return;
-        
-        // Provjera je li korisnik prijavljen
-        if (!isUserLoggedIn()) {
-            alert('Morate biti prijavljeni da biste dodali artikal u favorite.');
-            localStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        const favoriteBtn = document.getElementById('favoriteBtn');
-        if (!favoriteBtn) return;
-        
-        const isFavorite = favoriteBtn.classList.contains('active');
-        
-        try {
-            // Poziv API-ja za dodavanje/uklanjanje iz favorita
-            const response = await fetch(`/api/favorites/${currentProduct._id || currentProduct.id}`, {
-                method: isFavorite ? 'DELETE' : 'POST',
-                headers: getAuthHeaders()
-            });
-            
-            if (!response.ok) {
-                if (response.status === 401) {
-                    alert('Niste prijavljeni. Molimo prijavite se.');
-                    localStorage.setItem('redirectAfterLogin', window.location.href);
-                    window.location.href = 'login.html';
-                    return;
-                }
-                throw new Error('Greška prilikom ažuriranja favorita');
-            }
-            
-            // Ažuriranje UI-a
-            favoriteBtn.classList.toggle('active');
-            const icon = favoriteBtn.querySelector('i');
-            const text = favoriteBtn.querySelector('span');
-            
-            if (isFavorite) {
-                icon.classList.replace('fas', 'far');
-                text.textContent = 'Dodaj u favorite';
-            } else {
-                icon.classList.replace('far', 'fas');
-                text.textContent = 'Ukloni iz favorita';
-            }
-            
-            alert(isFavorite ? 'Artikal je uklonjen iz favorita.' : 'Artikal je dodan u favorite.');
-            
-        } catch (error) {
-            console.error('Greška:', error);
-            alert('Došlo je do greške prilikom ažuriranja favorita.');
-        }
-    }
-
     // Funkcija za kupovinu proizvoda
     async function toggleCart() {
         if (!currentProduct) return;
@@ -789,32 +773,6 @@
         } catch (error) {
             console.error('Greška:', error);
             alert('Došlo je do greške. Molimo pokušajte ponovo.');
-        }
-    }
-
-    // Funkcija za dohvaćanje artikala korisnika
-    async function fetchSellerItems(userId) {
-        try {
-            if (!userId) return [];
-            
-            console.log("Dohvaćam artikle prodavača:", userId);
-            
-            const response = await fetch(`/api/articles/user/${userId}`);
-            if (!response.ok) {
-                console.error(`Error ${response.status} pri dohvatu artikala korisnika`);
-                return [];
-            }
-            
-            const data = await response.json();
-            console.log("Artikli prodavača:", data);
-            
-            // Filtriraj da ne uključi trenutni artikal
-            return Array.isArray(data) 
-                ? data.filter(item => (item._id !== productId && item.id !== productId))
-                : [];
-        } catch (error) {
-            console.error('Greška pri dohvaćanju artikala korisnika:', error);
-            return [];
         }
     }
 
@@ -938,7 +896,188 @@
 // Dodavanje CSS stilova programski na kraj product.js fajla
 const productPageStyles = document.createElement('style');
 productPageStyles.textContent = `
-/* Bundle popup stilovi */
+/* Stilovi za centriranje proizvoda i optimizaciju slika */
+.product-detail-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+    margin: 0 auto;
+    max-width: 1200px;
+    padding: 20px;
+}
+
+/* Stilovi za galeriju slika */
+.product-gallery {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+/* Optimizacija glavne slike proizvoda */
+.product-main-image {
+    width: 100%;
+    height: 400px; /* Fiksna visina za konzistentnost */
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f8f8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-main-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Koristi contain umjesto cover za prikaz cijele slike */
+    display: block;
+}
+
+/* Stilovi za bundle stavke */
+.bundle-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.bundle-item {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.bundle-item.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    background-color: #f9fff9;
+}
+
+.bundle-item-image {
+    height: 150px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.bundle-item-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Stilovi za sekciju sličnih artikala */
+.related-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.related-item {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.related-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.related-item a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.related-item-image {
+    height: 180px;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.related-item-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.related-item-info {
+    padding: 10px;
+}
+
+.related-item-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.related-item-price {
+    font-weight: bold;
+    color: #e25454;
+    margin: 0;
+}
+
+.view-all-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    color: #333;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.view-all-button:hover {
+    background-color: #e9e9e9;
+}
+
+/* Responzivni dizajn */
+@media (max-width: 768px) {
+    .product-detail-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .product-gallery, 
+    .product-info {
+        max-width: 100%;
+    }
+    
+    .product-main-image {
+        height: 300px;
+    }
+    
+    .related-items-grid,
+    .bundle-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .related-item-image,
+    .bundle-item-image {
+        height: 120px;
+    }
+}
+
+/* Stilovi za bundle popup */
 .bundle-popup-hidden {
     display: none !important;
 }
@@ -1004,13 +1143,14 @@ productPageStyles.textContent = `
 }
 
 .add-to-cart-bundle-btn {
-    padding: 8px 16px;
+    padding: 10px 20px;
     background-color: #4CAF50;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    transition: background-color 0.3s;
 }
 
 .add-to-cart-bundle-btn:hover:not(:disabled) {
@@ -1020,171 +1160,6 @@ productPageStyles.textContent = `
 .add-to-cart-bundle-btn:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
-}
-
-.bundle-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.bundle-item {
-    border: 1px solid #eee;
-    border-radius: 5px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-.bundle-item.selected {
-    border-color: #4CAF50;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
-}
-
-.bundle-item-image {
-    height: 150px;
-    overflow: hidden;
-    margin-bottom: 10px;
-}
-
-.bundle-item-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.bundle-item-info h3 {
-    margin: 0 0 5px 0;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bundle-item-price {
-    font-weight: bold;
-    color: #4CAF50;
-}
-
-.bundle-item-checkbox {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.bundle-checkbox {
-    position: absolute;
-    opacity: 0;
-}
-
-.checkbox-custom {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    position: relative;
-}
-
-.bundle-checkbox:checked + label .checkbox-custom::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #4CAF50;
-    font-weight: bold;
-}
-
-/* Poboljšanja za stranicu proizvoda */
-.product-metadata {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 25px 0;
-    border-left: 4px solid #4CAF50;
-}
-
-.seller-info {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 25px 0;
-    text-align: center;
-}
-
-.seller-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.seller-avatar {
-    width: 70px;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-}
-
-.product-price {
-    font-size: 24px;
-    font-weight: 500;
-    color: #e25454;
-    margin-bottom: 20px;
-}
-
-.bundle-section {
-    background-color: #f0f7f0;
-    border-radius: 8px;
-    padding: 25px;
-    text-align: center;
-    border: 1px solid #e0f0e0;
-    margin: 25px 0;
-}
-
-.bundle-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.bundle-header h2 {
-    margin-bottom: 15px;
-    color: #4CAF50;
-}
-
-.create-bundle-btn {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 15px;
-    cursor: pointer;
-}
-
-.create-bundle-btn:hover {
-    background-color: #45a049;
-}
-
-@media (max-width: 768px) {
-    .bundle-popup {
-        width: 95%;
-        max-height: 90vh;
-    }
-    
-    .bundle-items-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    }
-    
-    .bundle-item-image {
-        height: 120px;
-    }
 }
 `;
 
