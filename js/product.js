@@ -748,7 +748,6 @@
             alert('Došlo je do greške prilikom ažuriranja favorita.');
         }
     }
-
 // Funkcija za kupovinu proizvoda
 async function toggleCart() {
     if (!currentProduct) return;
