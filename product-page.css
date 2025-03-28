@@ -1,0 +1,600 @@
+/* product-page.css - Samo za stranicu proizvoda */
+
+/* Osnovni layout za detalje proizvoda */
+.product-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Galerija proizvoda */
+.product-gallery {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.product-main-image {
+    width: 100%;
+    height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f8f8;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.product-main-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.product-thumbnails {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+}
+
+.thumbnail.active {
+    border-color: #4CAF50;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Informacije o proizvodu */
+.product-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.product-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.product-price {
+    font-size: 24px;
+    font-weight: 500;
+    color: #e25454;
+    margin-bottom: 20px;
+}
+
+/* Dugmad za akcije */
+.product-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.favorite-btn, 
+.cart-btn {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 4px;
+    background-color: white;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.favorite-btn:hover, 
+.cart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.favorite-btn i, 
+.cart-btn i {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.favorite-btn.active {
+    background-color: #fff5f5;
+    border-color: #ffcece;
+}
+
+.favorite-btn.active i {
+    color: #e25454;
+}
+
+.cart-btn {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: white;
+}
+
+.cart-btn:hover {
+    background-color: #45a049;
+}
+
+/* Metapodaci proizvoda */
+.product-metadata {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-left: 4px solid #4CAF50;
+}
+
+.metadata-item {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.metadata-label {
+    width: 120px;
+    font-weight: 500;
+    color: #555;
+}
+
+.metadata-value {
+    color: #333;
+}
+
+/* Opis proizvoda */
+.product-description {
+    margin-bottom: 25px;
+}
+
+.product-description h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    margin-bottom: 12px;
+    position: relative;
+    padding-bottom: 8px;
+}
+
+.product-description h2:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 40px;
+    height: 2px;
+    background-color: #4CAF50;
+}
+
+.description-content {
+    line-height: 1.8;
+    color: #555;
+}
+
+/* Informacije o prodavaču */
+.seller-info {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.seller-info h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.seller-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    font-size: 30px;
+    color: #999;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.seller-details {
+    text-align: center;
+}
+
+.seller-name {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.seller-location {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.seller-products-link {
+    color: #4CAF50;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.seller-products-link:hover {
+    color: #45a049;
+    text-decoration: underline;
+}
+
+/* Bundle sekcija */
+.bundle-section {
+    background-color: #f0f7f0;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    border: 1px solid #e0f0e0;
+    margin-bottom: 25px;
+}
+
+.bundle-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bundle-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #4CAF50;
+}
+
+.create-bundle-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.create-bundle-btn:hover {
+    background-color: #45a049;
+}
+
+.bundle-section > p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.user-items-preview {
+    margin-top: 20px;
+}
+
+.related-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.related-item {
+    background-color: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.related-item:hover {
+    transform: translateY(-5px);
+}
+
+.related-item-image {
+    height: 180px;
+}
+
+.related-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.related-item-info {
+    padding: 12px;
+}
+
+.related-item-info h3 {
+    font-size: 14px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.related-item-price {
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.view-all-items {
+    margin-top: 20px;
+}
+
+.view-all-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.view-all-button:hover {
+    background-color: #45a049;
+}
+
+/* Bundle popup */
+.bundle-popup-hidden {
+    display: none;
+}
+
+.bundle-popup-visible {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.bundle-popup {
+    background-color: white;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.bundle-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.bundle-popup-header h2 {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    color: #333;
+}
+
+.bundle-popup-close {
+    font-size: 24px;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.bundle-popup-close:hover {
+    color: #333;
+}
+
+.bundle-popup-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.bundle-popup-content p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.bundle-items-container {
+    margin-top: 15px;
+}
+
+.bundle-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.bundle-item {
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 10px;
+    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.bundle-item.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.bundle-item-image {
+    height: 150px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.bundle-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.bundle-item-info {
+    margin-bottom: 5px;
+}
+
+.bundle-item-info h3 {
+    font-size: 14px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bundle-item-price {
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.bundle-item-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.bundle-checkbox {
+    position: absolute;
+    opacity: 0;
+}
+
+.checkbox-custom {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+}
+
+.bundle-checkbox:checked + label .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.bundle-checkbox:disabled + label .checkbox-custom {
+    background-color: #f9f9f9;
+}
+
+.bundle-popup-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.selected-items-count {
+    color: #666;
+    font-size: 14px;
+}
+
+.add-to-cart-bundle-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.add-to-cart-bundle-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.add-to-cart-bundle-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Animacije */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive stilovi */
+@media (max-width: 768px) {
+    .product-detail {
+        flex-direction: column;
+    }
+    
+    .product-gallery, .product-info {
+        max-width: 100%;
+    }
+    
+    .product-actions {
+        flex-direction: column;
+    }
+    
+    .bundle-header {
+        flex-direction: column;
+    }
+    
+    .bundle-popup {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .bundle-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .bundle-item-image {
+        height: 120px;
+    }
+}
