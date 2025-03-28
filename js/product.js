@@ -752,4 +752,441 @@
         
         // Provjera je li korisnik prijavljen
         if (!isUserLoggedIn()) {
-            alert('Morate biti prijavljeni da biste
+            alert('Morate biti prijavljeni da biste kupili artikal.');
+            localStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = 'login.html';
+            return;
+        }
+        
+       try {
+            // Koristi ID artikla u URL-u umjesto u tijelu zahtjeva
+            const articleId = currentProduct._id || currentProduct.id;
+            const response = await fetch(`/api/cart/${articleId}`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+                // Nema tijela zahtjeva, ID je u URL-u
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('Niste prijavljeni. Molimo prijavite se.');
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    window.location.href = 'login.html';
+                    return;
+                }
+                throw new Error('Greška prilikom dodavanja artikla u korpu');
+            }
+            
+            // Spremi trenutni proizvod u localStorage za korištenje na checkout stranici (za svaki slučaj)
+            localStorage.setItem('checkoutItem', JSON.stringify(currentProduct));
+            
+            // Prikaži poruku o uspjehu
+            alert('Artikal je dodan u korpu! Preusmjeravamo vas na checkout.');
+            
+            // Preusmjeri korisnika na checkout
+            window.location.href = 'cart.html?checkout=direct';
+            
+        } catch (error) {
+            console.error('Greška:', error);
+            alert('Došlo je do greške. Molimo pokušajte ponovo.');
+        }
+    }
+
+    // Funkcija za dohvaćanje artikala korisnika
+    async function fetchSellerItems(userId) {
+        try {
+            if (!userId) return [];
+            
+            console.log("Dohvaćam artikle prodavača:", userId);
+            
+            const response = await fetch(`/api/articles/user/${userId}`);
+            if (!response.ok) {
+                console.error(`Error ${response.status} pri dohvatu artikala korisnika`);
+                return [];
+            }
+            
+            const data = await response.json();
+            console.log("Artikli prodavača:", data);
+            
+            // Filtriraj da ne uključi trenutni artikal
+            return Array.isArray(data) 
+                ? data.filter(item => (item._id !== productId && item.id !== productId))
+                : [];
+        } catch (error) {
+            console.error('Greška pri dohvaćanju artikala korisnika:', error);
+            return [];
+        }
+    }
+
+    // Inicijalizacija stranice
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Dohvatanje ID-a proizvoda iz URL-a
+        productId = getProductIdFromUrl();
+        
+        console.log("Product ID from URL:", productId); // Debugging
+        
+        if (!productId) {
+            // Ako nema ID-a, prikaži poruku o grešci
+            document.getElementById('product-detail').innerHTML = `
+                <div class="error-message">
+                    <p>Proizvod nije pronađen. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Dohvatanje proizvoda
+        const product = await fetchProduct(productId);
+        
+        if (!product) {
+            document.getElementById('product-detail').innerHTML = `
+                <div class="error-message">
+                    <p>Proizvod nije pronađen ili server nije dostupan. <a href="index.html">Vratite se na početnu stranicu</a>.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Spremanje proizvoda u globalnu varijablu
+        currentProduct = product;
+        
+        // Dohvatanje statusa favorita i korpe
+        let isFavorite = false;
+        let isInCart = false;
+        
+        try {
+            isFavorite = await fetchFavoriteStatus(productId);
+            isInCart = await fetchCartStatus(productId);
+        } catch (e) {
+            console.error("Error fetching status:", e);
+            // Nastavi bez statusa ako dohvat nije uspio
+        }
+        
+        // Prikaz proizvoda
+        renderProduct(product, isFavorite, isInCart);
+        
+        // Učitavanje artikala istog prodavača za bundle sekciju
+        if (product.user_id) {
+            fetchSellerItems(product.user_id).then(sellerItems => {
+                const container = document.getElementById('user-items-preview');
+                if (!container) return;
+                
+                if (sellerItems.length === 0) {
+                    container.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
+                    return;
+                }
+                
+                // Prikaži maksimalno 4 artikla
+                const itemsToShow = sellerItems.slice(0, 4);
+                let html = '<div class="related-items-grid">';
+                
+                itemsToShow.forEach(item => {
+                    html += `
+                        <div class="related-item">
+                            <a href="product.html?id=${item._id || item.id}">
+                                <div class="related-item-image">
+                                    <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
+                                         alt="${item.title}">
+                                </div>
+                                <div class="related-item-info">
+                                    <h3>${item.title}</h3>
+                                    <p class="related-item-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                if (sellerItems.length > 4) {
+                    html += `
+                        <div class="view-all-items">
+                            <a href="index.html?seller=${product.user_id}" class="view-all-button">
+                                Pogledaj sve artikle
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            });
+        }
+        
+        // Postavljanje naslova stranice
+        document.title = `${product.title} - Vintage Thrift Store`;
+        
+        // Dodavanje event listenera za zatvaranje bundle popup-a
+        const closeBtn = document.getElementById('bundle-popup-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeBundlePopup);
+        }
+        
+        // Event listener za klik izvan bundle popup-a
+        const bundlePopupContainer = document.getElementById('bundle-popup-container');
+        if (bundlePopupContainer) {
+            bundlePopupContainer.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeBundlePopup();
+                }
+            });
+        }
+    });
+
+})(); // Kraj IIFE (Immediately Invoked Function Expression)
+
+// Dodavanje CSS stilova programski na kraj product.js fajla
+const productPageStyles = document.createElement('style');
+productPageStyles.textContent = `
+/* Bundle popup stilovi */
+.bundle-popup-hidden {
+    display: none !important;
+}
+
+.bundle-popup-visible {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.bundle-popup {
+    background-color: white;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.bundle-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.bundle-popup-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.bundle-popup-close {
+    font-size: 24px;
+    color: #777;
+    cursor: pointer;
+}
+
+.bundle-popup-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.bundle-popup-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.add-to-cart-bundle-btn {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-to-cart-bundle-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.add-to-cart-bundle-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.bundle-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.bundle-item {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.bundle-item.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.bundle-item-image {
+    height: 150px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.bundle-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.bundle-item-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bundle-item-price {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.bundle-item-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.bundle-checkbox {
+    position: absolute;
+    opacity: 0;
+}
+
+.checkbox-custom {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+}
+
+.bundle-checkbox:checked + label .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Poboljšanja za stranicu proizvoda */
+.product-metadata {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    border-left: 4px solid #4CAF50;
+}
+
+.seller-info {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    text-align: center;
+}
+
+.seller-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.product-price {
+    font-size: 24px;
+    font-weight: 500;
+    color: #e25454;
+    margin-bottom: 20px;
+}
+
+.bundle-section {
+    background-color: #f0f7f0;
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    border: 1px solid #e0f0e0;
+    margin: 25px 0;
+}
+
+.bundle-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bundle-header h2 {
+    margin-bottom: 15px;
+    color: #4CAF50;
+}
+
+.create-bundle-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.create-bundle-btn:hover {
+    background-color: #45a049;
+}
+
+@media (max-width: 768px) {
+    .bundle-popup {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .bundle-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .bundle-item-image {
+        height: 120px;
+    }
+}
+`;
+
+// Dodaj stilove na kraj dokumenta
+document.head.appendChild(productPageStyles);
