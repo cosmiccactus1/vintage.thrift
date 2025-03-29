@@ -904,7 +904,7 @@
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
         
-        // Učitavanje artikala istog prodavača za bundle sekciju
+    // Učitavanje artikala istog prodavača za bundle sekciju
 if (product.user_id) {
     fetchSellerItems(product.user_id).then(sellerItems => {
         const container = document.getElementById('user-items-preview');
@@ -920,18 +920,29 @@ if (product.user_id) {
         let html = '<div class="products-grid">';
         
         itemsToShow.forEach(item => {
+            // Formatiranje kao u index.html
+            const itemId = item._id || item.id;
+            const imageUrl = item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg';
+            const formattedPrice = parseFloat(item.price).toFixed(2);
+            const categoryName = item.category ? getCategoryName(item.category) : '';
+
             html += `
                 <div class="product-card">
-                    <a href="product.html?id=${item._id || item.id}">
-                        <div class="product-image">
-                            <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
-                                 alt="${item.title}">
+                    <div class="product-image">
+                        <img src="${imageUrl}" alt="${item.title}">
+                        <div class="product-actions">
+                            <a href="product.html?id=${itemId}" class="view-button">
+                                <i class="fas fa-eye"></i>
+                            </a>
                         </div>
-                        <div class="product-info">
-                            <h3 class="product-title">${item.title}</h3>
-                            <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
-                        </div>
-                    </a>
+                    </div>
+                    <div class="product-info">
+                        <h2 class="product-title">
+                            <a href="product.html?id=${itemId}">${item.title}</a>
+                        </h2>
+                        <div class="product-category">${categoryName}</div>
+                        <div class="product-price">${formattedPrice} KM</div>
+                    </div>
                 </div>
             `;
         });
@@ -940,7 +951,7 @@ if (product.user_id) {
         
         if (sellerItems.length > 4) {
             html += `
-                <div class="view-all-items">
+                <div class="view-all-items" style="margin-top: 20px; text-align: center;">
                     <a href="index.html?seller=${product.user_id}" class="view-all-button">
                         Pogledaj sve artikle
                     </a>
