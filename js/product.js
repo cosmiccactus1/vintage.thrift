@@ -904,7 +904,7 @@
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
         
-  // Učitavanje artikala istog prodavača za bundle sekciju
+ // Učitavanje artikala istog prodavača za bundle sekciju
 if (product.user_id) {
     fetchSellerItems(product.user_id).then(sellerItems => {
         const container = document.getElementById('user-items-preview');
@@ -918,85 +918,28 @@ if (product.user_id) {
         // Prikaži maksimalno 4 artikla
         const itemsToShow = sellerItems.slice(0, 4);
         
-        // Postavljamo inline stilove koji će osigurati ispravan grid layout
+        // Postavimo inline stilove koji će osigurati da grid zauzima punu širinu
         let html = `
             <style>
+                /* Resetiranje nekih stilova za kontejner */
+                #user-items-preview {
+                    width: 100% !important;
+                    padding: 0 !important;
+                    margin-top: 20px !important;
+                }
+                
+                /* Grid postavke identične kao na index stranici */
                 #user-items-preview .products-grid {
                     display: grid !important;
-                    grid-template-columns: repeat(2, 1fr) !important;
-                    gap: 20px !important;
+                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+                    gap: 30px !important;
                     width: 100% !important;
-                    margin-top: 15px !important;
                 }
                 
-                @media (min-width: 992px) {
-                    #user-items-preview .products-grid {
-                        grid-template-columns: repeat(4, 1fr) !important;
-                    }
-                }
-                
-                @media (max-width: 576px) {
-                    #user-items-preview .products-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                }
-                
+                /* Ostali stilovi da osiguramo konzistentnost s index stranicom */
                 #user-items-preview .product-card {
-                    background-color: white;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                    transition: transform 0.3s, box-shadow 0.3s;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
+                    width: 100% !important;
                     margin: 0 !important;
-                }
-                
-                #user-items-preview .product-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-                }
-                
-                #user-items-preview .product-image {
-                    position: relative;
-                    height: 180px;
-                    overflow: hidden;
-                    border-radius: 8px 8px 0 0;
-                    background-color: #f8f8f8;
-                }
-                
-                #user-items-preview .product-image img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    object-position: center;
-                    transition: transform 0.3s;
-                }
-                
-                #user-items-preview .product-info {
-                    padding: 15px;
-                    display: flex;
-                    flex-direction: column;
-                    flex-grow: 1;
-                }
-                
-                #user-items-preview .product-title {
-                    font-family: 'Cormorant Garamond', serif;
-                    font-weight: 400;
-                    font-size: 18px;
-                    margin-bottom: 5px;
-                }
-                
-                #user-items-preview .product-title a {
-                    text-decoration: none;
-                    color: #333;
-                    transition: color 0.3s;
-                }
-                
-                #user-items-preview .product-price {
-                    font-weight: 400;
-                    margin-top: 5px;
-                    color: #e25454;
                 }
             </style>
             <div class="products-grid">
@@ -1044,7 +987,6 @@ if (product.user_id) {
         container.innerHTML = html;
     });
 }
-        
         // Postavljanje naslova stranice
         document.title = `${product.title} - Vintage Thrift Store`;
         
