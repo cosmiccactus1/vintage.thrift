@@ -905,52 +905,52 @@
         renderProduct(product, isFavorite, isInCart);
         
         // Učitavanje artikala istog prodavača za bundle sekciju
-        if (product.user_id) {
-            fetchSellerItems(product.user_id).then(sellerItems => {
-                const container = document.getElementById('user-items-preview');
-                if (!container) return;
-                
-                if (sellerItems.length === 0) {
-                    container.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
-                    return;
-                }
-                
-                // Prikaži maksimalno 4 artikla
-                const itemsToShow = sellerItems.slice(0, 4);
-                let html = '<div class="related-items-grid">';
-                
-                itemsToShow.forEach(item => {
-                    html += `
-                        <div class="related-item">
-                            <a href="product.html?id=${item._id || item.id}">
-                                <div class="related-item-image">
-                                    <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
-                                         alt="${item.title}">
-                                </div>
-                                <div class="related-item-info">
-                                    <h3>${item.title}</h3>
-                                    <p class="related-item-price">${parseFloat(item.price).toFixed(2)} KM</p>
-                                </div>
-                            </a>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                
-                if (sellerItems.length > 4) {
-                    html += `
-                        <div class="view-all-items">
-                            <a href="index.html?seller=${product.user_id}" class="view-all-button">
-                                Pogledaj sve artikle
-                            </a>
-                        </div>
-                    `;
-                }
-                
-                container.innerHTML = html;
-            });
+if (product.user_id) {
+    fetchSellerItems(product.user_id).then(sellerItems => {
+        const container = document.getElementById('user-items-preview');
+        if (!container) return;
+        
+        if (sellerItems.length === 0) {
+            container.innerHTML = '<p>Ovaj korisnik nema drugih artikala.</p>';
+            return;
         }
+        
+        // Prikaži maksimalno 4 artikla
+        const itemsToShow = sellerItems.slice(0, 4);
+        let html = '<div class="products-grid">';
+        
+        itemsToShow.forEach(item => {
+            html += `
+                <div class="product-card">
+                    <a href="product.html?id=${item._id || item.id}">
+                        <div class="product-image">
+                            <img src="${item.images && item.images.length > 0 ? item.images[0] : 'images/placeholder.jpg'}" 
+                                 alt="${item.title}">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-title">${item.title}</h3>
+                            <p class="product-price">${parseFloat(item.price).toFixed(2)} KM</p>
+                        </div>
+                    </a>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        if (sellerItems.length > 4) {
+            html += `
+                <div class="view-all-items">
+                    <a href="index.html?seller=${product.user_id}" class="view-all-button">
+                        Pogledaj sve artikle
+                    </a>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+    });
+}
         
         // Postavljanje naslova stranice
         document.title = `${product.title} - Vintage Thrift Store`;
