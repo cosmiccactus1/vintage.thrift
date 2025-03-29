@@ -904,7 +904,7 @@
         // Prikaz proizvoda
         renderProduct(product, isFavorite, isInCart);
         
- // Učitavanje artikala istog prodavača za bundle sekciju
+// Učitavanje artikala istog prodavača za bundle sekciju
 if (product.user_id) {
     fetchSellerItems(product.user_id).then(sellerItems => {
         const container = document.getElementById('user-items-preview');
@@ -918,28 +918,51 @@ if (product.user_id) {
         // Prikaži maksimalno 4 artikla
         const itemsToShow = sellerItems.slice(0, 4);
         
-        // Postavimo inline stilove koji će osigurati da grid zauzima punu širinu
+        // Koristimo fiksni grid s 3 kolone
         let html = `
             <style>
-                /* Resetiranje nekih stilova za kontejner */
+                /* Stil za kontejner cijele bundle sekcije */
+                .bundle-section {
+                    width: 100% !important;
+                    box-sizing: border-box !important;
+                    padding: 15px !important;
+                    margin: 0 !important;
+                }
+                
+                /* Stil za kontejner artikala */
                 #user-items-preview {
                     width: 100% !important;
                     padding: 0 !important;
-                    margin-top: 20px !important;
+                    margin: 0 !important;
                 }
                 
-                /* Grid postavke identične kao na index stranici */
+                /* Fiksni grid s točno 3 kolone */
                 #user-items-preview .products-grid {
                     display: grid !important;
-                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+                    grid-template-columns: repeat(3, 1fr) !important;
                     gap: 30px !important;
                     width: 100% !important;
+                    margin: 0 !important;
                 }
                 
-                /* Ostali stilovi da osiguramo konzistentnost s index stranicom */
+                /* Stil za kartice proizvoda */
                 #user-items-preview .product-card {
                     width: 100% !important;
                     margin: 0 !important;
+                }
+                
+                /* Za tablete - 2 kolone */
+                @media (max-width: 992px) {
+                    #user-items-preview .products-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                    }
+                }
+                
+                /* Za mobilne uređaje - 1 kolona */
+                @media (max-width: 576px) {
+                    #user-items-preview .products-grid {
+                        grid-template-columns: 1fr !important;
+                    }
                 }
             </style>
             <div class="products-grid">
