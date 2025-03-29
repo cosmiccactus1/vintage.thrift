@@ -304,22 +304,23 @@
         // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
         container.innerHTML = `
             <div class="product-detail-container">
-             <div class="product-gallery">
-    ${imagesHTML}
-    <div class="product-actions">
-        <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
-            <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
-            <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
-        </button>
-        <button class="cart-btn" id="cartBtn">
-            <i class="fas fa-shopping-bag"></i>
-            <span>Kupi odmah</span>
-        </button>
-    </div>
-</div>
-<div class="product-info">
-    <h1 class="product-title">${product.title}</h1>
-    <div class="product-price">${formattedPrice} KM</div>
+                <div class="product-gallery">
+                    ${imagesHTML}
+                </div>
+                <div class="product-info">
+                    <h1 class="product-title">${product.title}</h1>
+                    <div class="product-price">${formattedPrice} KM</div>
+                    
+                    <div class="product-actions">
+                        <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
+                            <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
+                            <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
+                        </button>
+                        <button class="cart-btn" id="cartBtn">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Kupi odmah</span>
+                        </button>
+                    </div>
                     
                     <div class="product-metadata">
                         <div class="metadata-item">
