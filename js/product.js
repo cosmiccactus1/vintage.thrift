@@ -301,79 +301,79 @@
         </div>
         `;
         
-        // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
-        container.innerHTML = `
-            <div class="product-detail-container">
-                <div class="product-gallery">
-                    ${imagesHTML}
+       // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
+container.innerHTML = `
+    <div class="product-detail-container">
+        <div class="product-gallery">
+            ${imagesHTML}
+        </div>
+        <div class="product-info">
+            <h1 class="product-title">${product.title}</h1>
+            <div class="product-price">${formattedPrice} KM</div>
+            
+            <div class="product-actions" style="margin-top: 15px; margin-bottom: 20px;">
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn" style="margin-right: 10px;">
+                    <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
+                    <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
+                </button>
+                <button class="cart-btn" id="cartBtn">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Kupi odmah</span>
+                </button>
+            </div>
+            
+            <div class="product-metadata" style="margin-top: 10px; margin-bottom: 15px;">
+                <div class="metadata-item">
+                    <span class="metadata-label">Kategorija:</span>
+                    <span class="metadata-value">${categoryName}</span>
                 </div>
-                <div class="product-info">
-                    <h1 class="product-title">${product.title}</h1>
-                    <div class="product-price">${formattedPrice} KM</div>
-                    
-                    <div class="product-actions">
-                        <button class="favorite-btn ${isFavorite ? 'active' : ''}" id="favoriteBtn">
-                            <i class="fa${isFavorite ? 's' : 'r'} fa-heart"></i>
-                            <span>${isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}</span>
-                        </button>
-                        <button class="cart-btn" id="cartBtn">
-                            <i class="fas fa-shopping-bag"></i>
-                            <span>Kupi odmah</span>
-                        </button>
-                    </div>
-                    
-                    <div class="product-metadata">
-                        <div class="metadata-item">
-                            <span class="metadata-label">Kategorija:</span>
-                            <span class="metadata-value">${categoryName}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <span class="metadata-label">Veličina:</span>
-                            <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <span class="metadata-label">Sezona:</span>
-                            <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <span class="metadata-label">Stanje:</span>
-                            <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
-                        </div>
-                        ${product.brand ? `
-                        <div class="metadata-item">
-                            <span class="metadata-label">Brend:</span>
-                            <span class="metadata-value">
-                                <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
-                            </span>
-                        </div>` : ''}
-                        ${product.color ? `
-                        <div class="metadata-item">
-                            <span class="metadata-label">Boja:</span>
-                            <span class="metadata-value">${product.color}</span>
-                        </div>` : ''}
-                        ${product.location ? `
-                        <div class="metadata-item">
-                            <span class="metadata-label">Lokacija:</span>
-                            <span class="metadata-value">${product.location}</span>
-                        </div>` : ''}
-                        <div class="metadata-item">
-                            <span class="metadata-label">Objavljeno:</span>
-                            <span class="metadata-value">${formattedDate}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="product-description">
-                        <h2>Opis</h2>
-                        <div class="description-content">
-                            ${product.description || 'Nema opisa za ovaj proizvod.'}
-                        </div>
-                    </div>
-                    
-                    ${sellerHtml}
-                    ${bundleHtml}
+                <div class="metadata-item">
+                    <span class="metadata-label">Veličina:</span>
+                    <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Sezona:</span>
+                    <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Stanje:</span>
+                    <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
+                </div>
+                ${product.brand ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Brend:</span>
+                    <span class="metadata-value">
+                        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
+                    </span>
+                </div>` : ''}
+                ${product.color ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Boja:</span>
+                    <span class="metadata-value">${product.color}</span>
+                </div>` : ''}
+                ${product.location ? `
+                <div class="metadata-item">
+                    <span class="metadata-label">Lokacija:</span>
+                    <span class="metadata-value">${product.location}</span>
+                </div>` : ''}
+                <div class="metadata-item">
+                    <span class="metadata-label">Objavljeno:</span>
+                    <span class="metadata-value">${formattedDate}</span>
                 </div>
             </div>
-        `;
+            
+            <div class="product-description" style="margin-top: 15px; margin-bottom: 15px;">
+                <h2>Opis</h2>
+                <div class="description-content">
+                    ${product.description || 'Nema opisa za ovaj proizvod.'}
+                </div>
+            </div>
+            
+            ${sellerHtml}
+            ${bundleHtml}
+        </div>
+    </div>
+`;
         
         // Dodavanje event listenera za thumbnailove (ako postoje)
         if (product.images && product.images.length > 1) {
