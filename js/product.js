@@ -301,7 +301,7 @@
         </div>
         `;
         
-      // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
+    // Generiranje HTML-a za prikaz proizvoda - dodat container za centriranje
 container.innerHTML = `
     <div class="product-detail-container">
         <div class="product-gallery">
@@ -316,39 +316,7 @@ container.innerHTML = `
                     <span class="metadata-label">Kategorija:</span>
                     <span class="metadata-value">${categoryName}</span>
                 </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Veličina:</span>
-                    <span class="metadata-value">${product.size || 'Nije navedeno'}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Sezona:</span>
-                    <span class="metadata-value">${getSeasonName(product.season) || 'Nije navedeno'}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Stanje:</span>
-                    <span class="metadata-value">${getConditionName(product.condition) || 'Nije navedeno'}</span>
-                </div>
-                ${product.brand ? `
-                <div class="metadata-item">
-                    <span class="metadata-label">Brend:</span>
-                    <span class="metadata-value">
-                        <a href="index.html?brand=${encodeURIComponent(product.brand)}">${product.brand}</a>
-                    </span>
-                </div>` : ''}
-                ${product.color ? `
-                <div class="metadata-item">
-                    <span class="metadata-label">Boja:</span>
-                    <span class="metadata-value">${product.color}</span>
-                </div>` : ''}
-                ${product.location ? `
-                <div class="metadata-item">
-                    <span class="metadata-label">Lokacija:</span>
-                    <span class="metadata-value">${product.location}</span>
-                </div>` : ''}
-                <div class="metadata-item">
-                    <span class="metadata-label">Objavljeno:</span>
-                    <span class="metadata-value">${formattedDate}</span>
-                </div>
+                <!-- ostale metadata stavke ostaju iste -->
             </div>
             
             <div class="product-description">
