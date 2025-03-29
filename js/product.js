@@ -918,31 +918,36 @@ if (product.user_id) {
         // Prikaži maksimalno 4 artikla
         const itemsToShow = sellerItems.slice(0, 4);
         
-        // Koristimo fiksni grid s 3 kolone
+        // Dodamo CSS koji će osigurati da bundle sekcija zauzima punu širinu
         let html = `
             <style>
-                /* Stil za kontejner cijele bundle sekcije */
+                /* Stil za kontejner bundle sekcije da zauzima punu širinu */
                 .bundle-section {
-                    width: 100% !important;
+                    width: 100vw !important; /* 100% širine viewporta */
+                    margin-left: calc(-50vw + 50%) !important; /* Centriramo sekciju */
                     box-sizing: border-box !important;
-                    padding: 15px !important;
-                    margin: 0 !important;
+                    padding: 20px !important;
+                    background-color: #f9f9f9 !important;
+                    border-top: 1px solid #eee !important;
+                    border-bottom: 1px solid #eee !important;
+                    margin-top: 30px !important;
+                    margin-bottom: 30px !important;
                 }
                 
-                /* Stil za kontejner artikala */
+                /* Stil za kontejner artikala da bude centriran */
                 #user-items-preview {
+                    max-width: 1200px !important; /* Ograničavamo maksimalnu širinu sadržaja */
+                    margin: 0 auto !important; /* Centriramo sadržaj */
+                    padding: 0 20px !important;
                     width: 100% !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
                 }
                 
-                /* Fiksni grid s točno 3 kolone */
+                /* Grid postavke za artikle */
                 #user-items-preview .products-grid {
                     display: grid !important;
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 30px !important;
                     width: 100% !important;
-                    margin: 0 !important;
                 }
                 
                 /* Stil za kartice proizvoda */
@@ -951,14 +956,14 @@ if (product.user_id) {
                     margin: 0 !important;
                 }
                 
-                /* Za tablete - 2 kolone */
+                /* Za tablete */
                 @media (max-width: 992px) {
                     #user-items-preview .products-grid {
                         grid-template-columns: repeat(2, 1fr) !important;
                     }
                 }
                 
-                /* Za mobilne uređaje - 1 kolona */
+                /* Za mobilne uređaje */
                 @media (max-width: 576px) {
                     #user-items-preview .products-grid {
                         grid-template-columns: 1fr !important;
